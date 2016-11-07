@@ -400,7 +400,8 @@ namespace PKHeX
         #endregion
 
         // Simple Generated Attributes
-        public override int CurrentFriendship { 
+        public override int CurrentFriendship
+        { 
             get { return CurrentHandler == 0 ? OT_Friendship : HT_Friendship; } 
             set { if (CurrentHandler == 0) OT_Friendship = value; else HT_Friendship = value; } 
         }
@@ -428,7 +429,7 @@ namespace PKHeX
                 for (int i = 0; i < 6; i++)
                     if (IVs[pm6stat = pm6++ % 6] == maxIV)
                         break;
-                return pm6stat*5 + maxIV%5;
+                return pm6stat * 5 + maxIV % 5;
             }
         }
 
@@ -692,4 +693,5 @@ namespace PKHeX
                 return desc;
             }
         }
+    }
 }
