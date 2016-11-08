@@ -342,6 +342,32 @@ namespace PKHeX
         // Trainer Info
         public override GameVersion Version { get; protected set; }
 
+        public string Password
+        {
+            get
+            {
+                byte[] strdata = Data.Skip(0x200B).Take(StringLength).ToArray();
+
+                int byteSum = 0;
+                int moneyDivVal;
+                int trainerDivVal;
+
+                for (int i = 0; i < strdata.Length; i++)
+                {
+                    if (strdata[i] == 80)
+                        break;
+
+                    byteSum += strdata[i];
+                }
+
+                // there's definitely a more efficient way of doing this!
+                moneyDivVal = (((Convert.ToInt32(Money) % 65535)) / 256) + (Convert.ToInt32(Money) % 256);
+                trainerDivVal = (((Convert.ToInt32(TID) % 65535)) / 256) + (Convert.ToInt32(TID) % 256);
+
+                return Convert.ToString(byteSum + moneyDivVal + trainerDivVal);
+            }
+        }
+
         public override string OT
         {
             get { return PKX.getG1Str(Data.Skip(0x200B).Take(StringLength).ToArray(), Japanese); }
@@ -645,5 +671,6 @@ namespace PKHeX
                 }
             }
         }
+        
     }
 }

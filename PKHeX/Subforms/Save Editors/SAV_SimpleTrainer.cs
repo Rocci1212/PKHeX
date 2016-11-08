@@ -64,6 +64,7 @@ namespace PKHeX
                 L_Started.Visible = L_Fame.Visible = false;
                 CAL_AdventureStartDate.Visible = CAL_HoFDate.Visible = false;
                 CAL_AdventureStartTime.Visible = CAL_HoFTime.Visible = false;
+                L_Password.Visible = TB_Password.Visible = true;
                 GB_Map.Visible = false;
                 GB_Options.Visible = true;
                 CB_BattleStyle.Items.AddRange(new[] { "Switch", "Set" });
@@ -75,6 +76,7 @@ namespace PKHeX
                 CB_SoundType.SelectedIndex = sav2.Sound > 0 ? 1 : 0;
                 CB_TextSpeed.SelectedIndex = sav2.TextSpeed;
                 badgeval = sav2.Badges;
+                TB_Password.Text = sav2.Password;
                 cba = new[] { CHK_1, CHK_2, CHK_3, CHK_4, CHK_6, CHK_5, CHK_7, CHK_8, CHK_H1, CHK_H2, CHK_H3, CHK_H4, CHK_H5, CHK_H6, CHK_H7, CHK_H8 };
             }
 

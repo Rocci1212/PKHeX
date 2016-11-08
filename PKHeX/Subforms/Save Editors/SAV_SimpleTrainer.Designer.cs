@@ -92,6 +92,8 @@
             this.LBL_BattleStyle = new System.Windows.Forms.Label();
             this.CB_BattleStyle = new System.Windows.Forms.ComboBox();
             this.CHK_BattleEffects = new System.Windows.Forms.CheckBox();
+            this.TB_Password = new System.Windows.Forms.TextBox();
+            this.L_Password = new System.Windows.Forms.Label();
             this.GB_Adventure.SuspendLayout();
             this.GB_Map.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.NUD_Z)).BeginInit();
@@ -108,10 +110,12 @@
             this.GB_Adventure.Controls.Add(this.L_Started);
             this.GB_Adventure.Controls.Add(this.CAL_AdventureStartDate);
             this.GB_Adventure.Controls.Add(this.CAL_HoFDate);
+            this.GB_Adventure.Controls.Add(this.TB_Password);
             this.GB_Adventure.Controls.Add(this.L_Fame);
             this.GB_Adventure.Controls.Add(this.MT_Seconds);
             this.GB_Adventure.Controls.Add(this.MT_Hours);
             this.GB_Adventure.Controls.Add(this.L_Seconds);
+            this.GB_Adventure.Controls.Add(this.L_Password);
             this.GB_Adventure.Controls.Add(this.L_Hours);
             this.GB_Adventure.Controls.Add(this.MT_Minutes);
             this.GB_Adventure.Controls.Add(this.L_Minutes);
@@ -788,11 +792,32 @@
             this.CHK_BattleEffects.Text = "Use Battle Effects";
             this.CHK_BattleEffects.UseVisualStyleBackColor = true;
             // 
+            // TB_Password
+            // 
+            this.TB_Password.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.TB_Password.Location = new System.Drawing.Point(44, 43);
+            this.TB_Password.MaxLength = 12;
+            this.TB_Password.Name = "TB_Password";
+            this.TB_Password.Size = new System.Drawing.Size(93, 20);
+            this.TB_Password.TabIndex = 57;
+            this.TB_Password.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.TB_Password.Visible = false;
+            // 
+            // L_Password
+            // 
+            this.L_Password.AutoSize = true;
+            this.L_Password.Location = new System.Drawing.Point(12, 46);
+            this.L_Password.Name = "L_Password";
+            this.L_Password.Size = new System.Drawing.Size(28, 13);
+            this.L_Password.TabIndex = 26;
+            this.L_Password.Text = "PW:";
+            this.L_Password.Visible = false;
+            // 
             // SAV_SimpleTrainer
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(384, 261);
+            this.ClientSize = new System.Drawing.Size(384, 262);
             this.Controls.Add(this.GB_Options);
             this.Controls.Add(this.GB_Badges);
             this.Controls.Add(this.GB_Trainer);
@@ -887,5 +912,7 @@
         private System.Windows.Forms.Label LBL_BattleStyle;
         private System.Windows.Forms.ComboBox CB_BattleStyle;
         private System.Windows.Forms.CheckBox CHK_BattleEffects;
+        private System.Windows.Forms.TextBox TB_Password;
+        private System.Windows.Forms.Label L_Password;
     }
 }
