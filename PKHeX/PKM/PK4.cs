@@ -429,6 +429,115 @@ namespace PKHeX
             return bk4;
         }
 
+        public PK3 convertToPK3()
+        {
+            PK3 pk3 = new PK3();
+            pk3.EncryptionConstant = this.EncryptionConstant;
+            pk3.Nature = this.Nature;
+            pk3.AltForm = 0; // revert any alternate forms
+            pk3.IsNicknamed = this.IsNicknamed;
+            pk3.Gender = this.Gender;
+            //pk3.CurrentFriendship = this.CurrentFriendship;
+            //pk3.Ability = this.Ability % 3; // TODO revert any hidden abilities
+            pk3.CurrentHandler = this.CurrentHandler;
+            //pk3.Egg_Location = ? // todo
+            pk3.PID = this.PID;
+            pk3.TID = this.TID;
+            pk3.SID = this.SID;
+            pk3.Nickname = this.Nickname;
+            pk3.Language = this.Language;
+            pk3.OT_Name = this.OT_Name;
+            pk3.Checksum = this.Checksum;
+            pk3.Sanity = this.Sanity;
+            pk3.Species = this.Species;
+            //pk3.HeldItem = this.HeldItem; // todo
+            pk3.EXP = this.EXP;
+            pk3.OT_Friendship = this.OT_Friendship;
+            pk3.Move1 = this.Move1;
+            pk3.Move2 = this.Move2;
+            pk3.Move3 = this.Move3;
+            pk3.Move4 = this.Move4;
+            pk3.Move1_PPUps = this.Move1_PPUps;
+            pk3.Move2_PPUps = this.Move2_PPUps;
+            pk3.Move3_PPUps = this.Move3_PPUps;
+            pk3.Move4_PPUps = this.Move4_PPUps;
+
+            // Fix PP
+            pk3.Move1_PP = pk3.getMovePP(pk3.Move1, pk3.Move1_PPUps);
+            pk3.Move2_PP = pk3.getMovePP(pk3.Move2, pk3.Move2_PPUps);
+            pk3.Move3_PP = pk3.getMovePP(pk3.Move3, pk3.Move3_PPUps);
+            pk3.Move4_PP = pk3.getMovePP(pk3.Move4, pk3.Move4_PPUps);
+
+            //pk3.MarkValue = this.MarkValue;
+            pk3.EV_HP = this.EV_HP;
+            pk3.EV_ATK = this.EV_ATK;
+            pk3.EV_DEF = this.EV_DEF;
+            pk3.EV_SPE = this.EV_SPE;
+            pk3.EV_SPA = this.EV_SPA;
+            pk3.EV_SPD = this.EV_SPD;
+
+            pk3.CNT_Cool = this.CNT_Cool;
+            pk3.CNT_Beauty = this.CNT_Beauty;
+            pk3.CNT_Cute = this.CNT_Cute;
+            pk3.CNT_Smart = this.CNT_Smart;
+            pk3.CNT_Tough = this.CNT_Tough;
+            pk3.CNT_Sheen = this.CNT_Sheen;
+
+            pk3.PKRS_Days = this.PKRS_Days;
+            pk3.PKRS_Strain = this.PKRS_Strain;
+
+            //pk3.Met_Location = this.Met_Location; // todo
+            pk3.Met_Level = this.Met_Level;
+            pk3.Version = this.Version; // todo - lets see what happens here
+            pk3.Ball = this.Ball;
+            pk3.OT_Gender = this.OT_Gender;
+            pk3.IV32 = this.IV32;
+            pk3.IV_HP = this.IV_HP;
+            pk3.IV_ATK = this.IV_ATK;
+            pk3.IV_DEF = this.IV_DEF;
+            pk3.IV_SPE = this.IV_SPE;
+            pk3.IV_SPA = this.IV_SPA;
+            pk3.IV_SPD = this.IV_SPD;
+
+            pk3.IsEgg = this.IsEgg;
+            pk3.AbilityNumber = this.AbilityNumber % 3; // revert any hidden abilities
+
+            // todo
+            //pk3.RibbonCountG3Cool;
+            //pk3.RibbonCountG3Beauty;
+            //pk3.RibbonCountG3Cute;
+            //pk3.RibbonCountG3Smart;
+            //pk3.RibbonCountG3CoolTough;
+
+
+            pk3.RibbonChampionG3Hoenn = this.RibbonChampionG3Hoenn;
+            pk3.RibbonWinning = this.RibbonWinning;
+            pk3.RibbonVictory = this.RibbonVictory;
+            pk3.RibbonArtist = this.RibbonArtist;
+            pk3.RibbonEffort = this.RibbonEffort;
+            pk3.RibbonChampionBattle = this.RibbonChampionBattle;
+            pk3.RibbonChampionRegional = this.RibbonChampionRegional;
+            pk3.RibbonChampionNational = this.RibbonChampionNational;
+            pk3.RibbonCountry = this.RibbonCountry;
+            pk3.RibbonNational = this.RibbonNational;
+            pk3.RibbonEarth = this.RibbonEarth;
+            pk3.FatefulEncounter = this.FatefulEncounter;
+            pk3.Stat_Level = this.Stat_Level;
+            pk3.Stat_HPCurrent = this.Stat_HPCurrent;
+
+            // todo i dont think i should set these
+            //pk3.Stat_HPMax = this.Stat_HPMax;
+            //pk3.Stat_ATK = this.Stat_ATK;
+            //pk3.Stat_DEF = this.Stat_DEF;
+            //pk3.Stat_SPE = this.Stat_SPE;
+            //pk3.Stat_SPA = this.Stat_SPA;
+            //pk3.Stat_SPD = this.Stat_SPD;
+
+            pk3.RibbonWorld = true; // i'm using this to indicate that the pokemon has come from a later game.
+
+            return pk3;
+        }
+
         public PK5 convertToPK5()
         {
             // Double Check Location Data to see if we're already a PK5
