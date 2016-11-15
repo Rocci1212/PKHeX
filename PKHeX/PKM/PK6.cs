@@ -635,7 +635,7 @@ namespace PKHeX
         public override bool WasTradedEgg => Egg_Location == 30002;
         public override bool WasIngameTrade => Met_Location == 30001;
 
-        public string RibbonDescription
+        public override string RibbonDescription
         {
             get
             {

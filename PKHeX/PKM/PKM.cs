@@ -264,7 +264,7 @@ namespace PKHeX
         public bool AO => Version == (int)GameVersion.AS || Version == (int)GameVersion.OR;
         public bool SM => Version == (int)GameVersion.SN || Version == (int)GameVersion.MN;
         protected bool PtHGSS => GameVersion.Pt == (GameVersion)Version || HGSS;
-        public bool HGSS => new[] {GameVersion.HG, GameVersion.SS}.Contains((GameVersion)Version);
+        public bool HGSS => new[] { GameVersion.HG, GameVersion.SS }.Contains((GameVersion)Version);
         public bool Gen5 => Version >= 20 && Version <= 23;
         public bool Gen4 => Version >= 7 && Version <= 12 && Version != 9;
         public bool Gen3 => Version >= 1 && Version <= 5 || Version == 15;
@@ -279,18 +279,18 @@ namespace PKHeX
                 if (Gen4) return 4;
                 if (Gen3) return 3;
                 return -1;
-            } 
+            }
         }
         public bool PKRS_Infected => PKRS_Strain > 0;
         public bool PKRS_Cured => PKRS_Days == 0 && PKRS_Strain > 0;
         public virtual bool ChecksumValid => Checksum == CalculateChecksum();
         public int CurrentLevel => PKX.getLevel(Species, EXP);
-        public bool MarkCircle      { get { return (MarkValue & (1 << 0)) == 1 << 0; } set { MarkValue = (byte)(MarkValue & ~(1 << 0) | (value ? 1 << 0 : 0)); } }
-        public bool MarkTriangle    { get { return (MarkValue & (1 << 1)) == 1 << 1; } set { MarkValue = (byte)(MarkValue & ~(1 << 0) | (value ? 1 << 0 : 0)); } }
-        public bool MarkSquare      { get { return (MarkValue & (1 << 2)) == 1 << 2; } set { MarkValue = (byte)(MarkValue & ~(1 << 0) | (value ? 1 << 0 : 0)); } }
-        public bool MarkHeart       { get { return (MarkValue & (1 << 3)) == 1 << 3; } set { MarkValue = (byte)(MarkValue & ~(1 << 0) | (value ? 1 << 0 : 0)); } }
-        public bool MarkStar        { get { return (MarkValue & (1 << 4)) == 1 << 4; } set { MarkValue = (byte)(MarkValue & ~(1 << 0) | (value ? 1 << 0 : 0)); } }
-        public bool MarkDiamond     { get { return (MarkValue & (1 << 5)) == 1 << 5; } set { MarkValue = (byte)(MarkValue & ~(1 << 0) | (value ? 1 << 0 : 0)); } }
+        public bool MarkCircle { get { return (MarkValue & (1 << 0)) == 1 << 0; } set { MarkValue = (byte)(MarkValue & ~(1 << 0) | (value ? 1 << 0 : 0)); } }
+        public bool MarkTriangle { get { return (MarkValue & (1 << 1)) == 1 << 1; } set { MarkValue = (byte)(MarkValue & ~(1 << 0) | (value ? 1 << 0 : 0)); } }
+        public bool MarkSquare { get { return (MarkValue & (1 << 2)) == 1 << 2; } set { MarkValue = (byte)(MarkValue & ~(1 << 0) | (value ? 1 << 0 : 0)); } }
+        public bool MarkHeart { get { return (MarkValue & (1 << 3)) == 1 << 3; } set { MarkValue = (byte)(MarkValue & ~(1 << 0) | (value ? 1 << 0 : 0)); } }
+        public bool MarkStar { get { return (MarkValue & (1 << 4)) == 1 << 4; } set { MarkValue = (byte)(MarkValue & ~(1 << 0) | (value ? 1 << 0 : 0)); } }
+        public bool MarkDiamond { get { return (MarkValue & (1 << 5)) == 1 << 5; } set { MarkValue = (byte)(MarkValue & ~(1 << 0) | (value ? 1 << 0 : 0)); } }
         public Image Sprite => PKX.getSprite(this);
         public string ShowdownText => ShowdownSet.getShowdownText(this);
         public string[] QRText => PKX.getQRText(this);
@@ -604,7 +604,7 @@ namespace PKHeX
             TransferPropertiesWithReflection(this, pk);
             pk.EVs = new int[6];
             pk.Nature = IVs.Sum() % 25;
-            pk.IVs = new[] {31,31,31,31,31,31};
+            pk.IVs = new[] { 31, 31, 31, 31, 31, 31 };
             pk.RefreshChecksum();
             if (!IsNicknamed)
                 pk.Nickname = Nickname.ToLower();
@@ -626,5 +626,7 @@ namespace PKHeX
                 ReflectUtil.SetValue(Destination, property, prop);
             }
         }
+
+        public virtual string RibbonDescription { get { return ""; } }
     }
 }

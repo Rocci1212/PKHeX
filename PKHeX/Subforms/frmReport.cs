@@ -106,7 +106,7 @@ namespace PKHeX
             public int Met_Day => pkm.MetDate.GetValueOrDefault().Day;
             public int Encounter => pkm.EncounterType;
             public string Legality => new LegalityAnalysis(pkm).Report;
-            public string Ribbons => (pkm as PK6).RibbonDescription;
+            public string Ribbons => pkm.RibbonDescription;
             #endregion
             public Preview(PKM p) { pkm = p; }
         }
