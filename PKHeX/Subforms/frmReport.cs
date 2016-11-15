@@ -18,13 +18,12 @@ namespace PKHeX
             private readonly PKM pkm;
             public string Position => pkm.Identifier;
             public Image Sprite => pkm.Sprite;
-            public int Index => pkm.Species;
             public string Nickname => pkm.Nickname;
             public string Species => Main.GameStrings.specieslist[pkm.Species];
             public string Nature => Main.GameStrings.natures[pkm.Nature];
             public string Gender => Main.gendersymbols[pkm.Gender];
             public string ESV => pkm.PSV.ToString("0000");
-            public string HP_Type => Main.GameStrings.types[pkm.HPType + 1];
+            public string HP_Type => Main.GameStrings.types[pkm.HPType+1];
             public string Ability => Main.GameStrings.abilitylist[pkm.Ability];
             public string Move1 => Main.GameStrings.movelist[pkm.Move1];
             public string Move2 => Main.GameStrings.movelist[pkm.Move2];
@@ -37,9 +36,9 @@ namespace PKHeX
             public string OT => pkm.OT_Name;
             public string Version => Main.GameStrings.gamelist[pkm.Version];
             public string OTLang => Main.GameStrings.gamelanguages[pkm.Language] ?? $"UNK {pkm.Language}";
-            public string CountryID => pkm.Format > 5 ? ((PK6)pkm).Country.ToString() : "N/A";
-            public string RegionID => pkm.Format > 5 ? ((PK6)pkm).Region.ToString() : "N/A";
-            public string DSRegionID => pkm.Format > 5 ? ((PK6)pkm).ConsoleRegion.ToString() : "N/A";
+            public string CountryID => pkm.Format > 5 ? pkm.Country.ToString() : "N/A";
+            public string RegionID => pkm.Format > 5 ? pkm.Region.ToString() : "N/A";
+            public string DSRegionID => pkm.Format > 5 ? pkm.ConsoleRegion.ToString() : "N/A";
 
             #region Extraneous
             public string EC => pkm.EncryptionConstant.ToString("X8");
@@ -66,9 +65,9 @@ namespace PKHeX
             public int Sheen => pkm.CNT_Sheen;
             public int Markings => pkm.MarkValue;
 
-            public string NotOT => pkm.Format > 5 ? ((PK6)pkm).HT_Name : "N/A";
+            public string NotOT => pkm.Format > 5 ? pkm.HT_Name : "N/A";
 
-            public int AbilityNum => pkm.Format > 5 ? ((PK6)pkm).AbilityNumber : -1;
+            public int AbilityNum => pkm.Format > 5 ? pkm.AbilityNumber : -1;
             public int GenderFlag => pkm.Gender;
             public int AltForms => pkm.AltForm;
             public int PKRS_Strain => pkm.PKRS_Strain;
@@ -106,8 +105,6 @@ namespace PKHeX
             public int Met_Month => pkm.MetDate.GetValueOrDefault().Month;
             public int Met_Day => pkm.MetDate.GetValueOrDefault().Day;
             public int Encounter => pkm.EncounterType;
-            public string Legality => new LegalityAnalysis(pkm).Report;
-            public string Ribbons => (pkm as PK6).RibbonDescription;
 
             #endregion
             public Preview(PKM p) { pkm = p; }
@@ -144,7 +141,7 @@ namespace PKHeX
         }
         private void promptSaveCSV(object sender, FormClosingEventArgs e)
         {
-            if (Util.Prompt(MessageBoxButtons.YesNo, "Save all the data to CSV?") == DialogResult.Yes)
+            if (Util.Prompt(MessageBoxButtons.YesNo,"Save all the data to CSV?") == DialogResult.Yes)
             {
                 SaveFileDialog savecsv = new SaveFileDialog
                 {

@@ -2637,7 +2637,7 @@ namespace PKHeX
         private void showLegality(PKM pk, bool tabs, bool verbose)
         {
             LegalityAnalysis la = new LegalityAnalysis(pk);
-            if (!la.Native)
+            if (!la.Parsed)
             {
                 Util.Alert($"Checking legality of PK{pk.Format} files that originated from Gen{pk.GenNumber} is not supported.");
                 return;
@@ -2651,7 +2651,7 @@ namespace PKHeX
             if (!fieldsLoaded)
                 return;
             Legality = la ?? new LegalityAnalysis(pkm);
-            if (!Legality.Parsed || !Legality.Native || HaX)
+            if (!Legality.Parsed || HaX)
             {
                 PB_Legal.Visible = false;
                 return;
@@ -2663,15 +2663,9 @@ namespace PKHeX
             // Refresh Move Legality
             for (int i = 0; i < 4; i++)
                 movePB[i].Visible = !Legality.vMoves[i].Valid && !HaX;
-
-            int[] suggested = Legality.getSuggestedRelearn();
+            
             for (int i = 0; i < 4; i++)
-            {
-                if (pkm.RelearnMoves[i] == 0 && suggested[i] != 0)
-                    relearnPB[i].Visible = !HaX;
-                else
-                    relearnPB[i].Visible = !Legality.vRelearn[i].Valid && !HaX;
-            }
+                relearnPB[i].Visible = !Legality.vRelearn[i].Valid && !HaX;
         }
         private void updateStats()
         {
