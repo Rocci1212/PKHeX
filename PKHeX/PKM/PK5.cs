@@ -454,7 +454,7 @@ namespace PKHeX
 
             pk4.FatefulEncounter = FatefulEncounter;
             pk4.Gender = Gender;
-            pk4.AltForm = 0; // cancel out any form
+            pk4.AltForm = AltForm;
             pk4.Nickname = Nickname;
             pk4.Version = Version;
 
@@ -507,14 +507,14 @@ namespace PKHeX
             pk4.EncounterType = EncounterType;
 
             // i dont think i should set this either
-            pk4.Stat_Level = Stat_Level;
-            pk4.Stat_HPCurrent = Stat_HPCurrent;
-            pk4.Stat_HPMax = Stat_HPMax;
-            pk4.Stat_ATK = Stat_ATK;
-            pk4.Stat_DEF = Stat_DEF;
-            pk4.Stat_SPE = Stat_SPE;
-            pk4.Stat_SPA = Stat_SPA;
-            pk4.Stat_SPD = Stat_SPD;
+            //pk4.Stat_Level = Stat_Level;
+            //pk4.Stat_HPCurrent = Stat_HPCurrent;
+            //pk4.Stat_HPMax = Stat_HPMax;
+            //pk4.Stat_ATK = Stat_ATK;
+            //pk4.Stat_DEF = Stat_DEF;
+            //pk4.Stat_SPE = Stat_SPE;
+            //pk4.Stat_SPA = Stat_SPA;
+            //pk4.Stat_SPD = Stat_SPD;
 
             return pk4;
         }

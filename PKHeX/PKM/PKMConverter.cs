@@ -136,7 +136,7 @@ namespace PKHeX
                 comment = "No need to convert, current format matches requested format.";
                 return pk;
             }
-            if (timeMachine || fromFormat <= toFormat || fromFormat == 2)
+            if (fromFormat <= toFormat)
             {
                 pkm = pk.Clone();
                 if (pkm.IsEgg) // force hatch
@@ -163,16 +163,16 @@ namespace PKHeX
                             pkm = null; // pkm.convertPK1toPK7();
                         break;
                     case "PK2":
-                        if (PKMType == typeof (PK1))
-                        {
-                            if (pk.Species > 151)
-                            {
-                                comment = $"Cannot convert a {PKX.getSpeciesName(pkm.Species, ((PK2)pkm).Japanese ? 1 : 2)} to {PKMType.Name}";
-                                return null;
-                            }
-                            pkm = ((PK2) pk).convertToPK1();
-                        }
-                        else
+                        //if (PKMType == typeof (PK1))
+                        //{
+                        //    if (pk.Species > 151)
+                        //    {
+                        //        comment = $"Cannot convert a {PKX.getSpeciesName(pkm.Species, ((PK2)pkm).Japanese ? 1 : 2)} to {PKMType.Name}";
+                        //        return null;
+                        //    }
+                        //    pkm = ((PK2) pk).convertToPK1();
+                        //}
+                        //else
                             pkm = null;
                         break;
                     case "CK3":
@@ -212,16 +212,6 @@ namespace PKHeX
                         pkm = new PK7(pkm.Data, pkm.Identifier);
                         break;
                     case "PK4":
-                        if (toFormat == 3)
-                        {
-                            if (pk.Species > 386)
-                            {
-                                comment = $"Cannot convert a {PKX.getSpeciesName(pkm.Species, ((PK4)pkm).Language)} to {PKMType.Name}";
-                                return null;
-                            }
-                            pkm = ((PK4)pkm).convertToPK3();
-                            break;
-                        }
                         if (PKMType == typeof(BK4))
                         {
                             pkm = ((PK4)pkm).convertToBK4();
@@ -255,6 +245,66 @@ namespace PKHeX
                         break;
                 }
             }
+
+            //else // fromFormat > toFormat
+            //{
+            //    pkm = pk.Clone();
+            //    if (pkm.IsEgg) // force hatch
+            //    {
+            //        pkm.IsEgg = false;
+            //        if (pkm.AO)
+            //            pkm.Met_Location = 318; // Battle Resort
+            //        else if (pkm.XY)
+            //            pkm.Met_Location = 38; // Route 7
+            //        else if (pkm.Gen5)
+            //            pkm.Met_Location = 16; // Route 16
+            //        else
+            //            pkm.Met_Location = 30001; // Pokétransfer
+            //    }
+
+            //    switch (fromType.Name)
+            //    {
+            //        case "PK2":
+            //            if (PKMType == typeof(PK1))
+            //            {
+            //                if (pk.Species > 151)
+            //                {
+            //                    comment = $"Cannot convert a {PKX.getSpeciesName(pkm.Species, ((PK2)pkm).Japanese ? 1 : 2)} to {PKMType.Name}";
+            //                    return null;
+            //                }
+            //                pkm = ((PK2)pk).convertToPK1();
+            //            }
+            //            else
+            //                pkm = null;
+            //            break;
+            //        case "CK3":
+            //        case "XK3":
+            //            // interconverting C/XD needs to visit main series format
+            //            // ends up stripping purification/shadow etc stats
+            //            pkm = pkm.convertToPK3();
+            //            goto case "PK3"; // fall through
+            //        case "PK3":
+            //            // todo
+            //            break;
+            //        case "PK4":
+            //            if (toFormat == 3)
+            //            {
+            //                if (pk.Species > 386)
+            //                {
+            //                    comment = $"Cannot convert a {PKX.getSpeciesName(pkm.Species, ((PK4)pkm).Language)} to {PKMType.Name}";
+            //                    return null;
+            //                }
+            //                pkm = ((PK4)pkm).convertToPK3();
+            //                break;
+            //            }
+            //            break;
+            //        case "PK5":
+            //            pkm = ((BK4)pkm).convertToPK4();
+            //            if (toFormat == 4)
+            //                break;
+            //            pkm = pkm.convertToPK3();
+            //    }
+            //}
 
             comment = pkm == null
                 ? $"Cannot convert a {fromType.Name} to a {PKMType.Name}." 
