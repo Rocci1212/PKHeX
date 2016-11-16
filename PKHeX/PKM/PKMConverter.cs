@@ -117,6 +117,7 @@ namespace PKHeX
         }
         internal static PKM convertToFormat(PKM pk, Type PKMType, out string comment)
         {
+            bool timeMachine = true;
             if (pk == null || pk.Species == 0)
             {
                 comment = "Null input. Aborting.";
@@ -135,7 +136,7 @@ namespace PKHeX
                 comment = "No need to convert, current format matches requested format.";
                 return pk;
             }
-            if (fromFormat <= toFormat || fromFormat == 2)
+            if (timeMachine || fromFormat <= toFormat || fromFormat == 2)
             {
                 pkm = pk.Clone();
                 if (pkm.IsEgg) // force hatch
@@ -211,6 +212,16 @@ namespace PKHeX
                         pkm = new PK7(pkm.Data, pkm.Identifier);
                         break;
                     case "PK4":
+                        if (toFormat == 3)
+                        {
+                            if (pk.Species > 386)
+                            {
+                                comment = $"Cannot convert a {PKX.getSpeciesName(pkm.Species, ((PK4)pkm).Language)} to {PKMType.Name}";
+                                return null;
+                            }
+                            pkm = ((PK4)pkm).convertToPK3();
+                            break;
+                        }
                         if (PKMType == typeof(BK4))
                         {
                             pkm = ((PK4)pkm).convertToBK4();
