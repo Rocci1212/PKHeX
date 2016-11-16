@@ -323,6 +323,202 @@ namespace PKHeX
             return PKX.encryptArray45(Data);
         }
 
+        public PK4 convertToPK4()
+        {
+            PK4 pk4 = new PK4();
+
+            pk4.EncryptionConstant = EncryptionConstant;
+            pk4.Nature = Nature;
+            pk4.CurrentFriendship = CurrentFriendship;
+            //pk4.CurrentHandler = CurrentHandler;
+            pk4.PID = PID;
+            pk4.Sanity = Sanity;
+            pk4.Checksum = Checksum;
+            pk4.Species = Species;
+            pk4.HeldItem = HeldItem;
+            pk4.TID = TID;
+            pk4.SID = SID;
+            pk4.EXP = EXP;
+            pk4.OT_Friendship = OT_Friendship;
+            pk4.Ability = Ability;
+            pk4.Language = Language;
+            pk4.EV_HP = EV_HP;
+            pk4.EV_ATK = EV_ATK;
+            pk4.EV_DEF = EV_DEF;
+            pk4.EV_SPE = EV_SPE;
+            pk4.EV_SPA = EV_SPA;
+            pk4.EV_SPD = EV_SPD;
+            pk4.CNT_Cool = CNT_Cool;
+            pk4.CNT_Beauty = CNT_Beauty;
+            pk4.CNT_Cute = CNT_Cute;
+            pk4.CNT_Smart = CNT_Smart;
+            pk4.CNT_Tough = CNT_Tough;
+            pk4.CNT_Sheen = CNT_Sheen;
+
+            pk4.RibbonChampionSinnoh = RibbonChampionSinnoh;
+            pk4.RibbonAbility = RibbonAbility;
+            pk4.RibbonAbilityGreat = RibbonAbilityGreat;
+            pk4.RibbonAbilityDouble = RibbonAbilityDouble;
+            pk4.RibbonAbilityMulti = RibbonAbilityMulti;
+            pk4.RibbonAbilityPair = RibbonAbilityPair;
+            pk4.RibbonAbilityWorld = RibbonAbilityWorld;
+            pk4.RibbonAlert = RibbonAlert;
+            pk4.RibbonShock = RibbonShock;
+            pk4.RibbonDowncast = RibbonDowncast;
+            pk4.RibbonCareless = RibbonCareless;
+            pk4.RibbonRelax = RibbonRelax;
+            pk4.RibbonSnooze = RibbonSnooze;
+            pk4.RibbonSmile = RibbonSmile;
+            pk4.RibbonGorgeous = RibbonGorgeous;
+            pk4.RibbonRoyal = RibbonRoyal;
+            pk4.RibbonGorgeousRoyal = RibbonGorgeousRoyal;
+            pk4.RibbonFootprint = RibbonFootprint;
+            pk4.RibbonRecord = RibbonRecord;
+            pk4.RibbonEvent = RibbonEvent;
+            pk4.RibbonLegend = RibbonLegend;
+            pk4.RibbonChampionWorld = RibbonChampionWorld;
+            pk4.RibbonBirthday = RibbonBirthday;
+            pk4.RibbonSpecial = RibbonSpecial;
+            pk4.RibbonSouvenir = RibbonSouvenir;
+            pk4.RibbonWishing = RibbonWishing;
+            pk4.RibbonClassic = RibbonClassic;
+            pk4.RibbonPremier = RibbonPremier;
+            pk4.RIB3_4 = RIB3_4;
+            pk4.RIB3_5 = RIB3_5;
+            pk4.RIB3_6 = RIB3_6;
+            pk4.RIB3_7 = RIB3_7;
+
+            pk4.Move1 = Move1;
+            pk4.Move2 = Move2;
+            pk4.Move3 = Move3;
+            pk4.Move4 = Move4;
+            pk4.Move1_PPUps = Move1_PPUps;
+            pk4.Move2_PPUps = Move2_PPUps;
+            pk4.Move3_PPUps = Move3_PPUps;
+            pk4.Move4_PPUps = Move4_PPUps;
+
+            pk4.Move1_PP = pk4.getMovePP(pk4.Move1, pk4.Move1_PPUps);
+            pk4.Move2_PP = pk4.getMovePP(pk4.Move2, pk4.Move2_PPUps);
+            pk4.Move3_PP = pk4.getMovePP(pk4.Move3, pk4.Move3_PPUps);
+            pk4.Move4_PP = pk4.getMovePP(pk4.Move4, pk4.Move4_PPUps);
+
+            pk4.IV32 = IV32;
+            pk4.IV_HP = IV_HP;
+            pk4.IV_ATK = IV_ATK;
+            pk4.IV_DEF = IV_DEF;
+            pk4.IV_SPE = IV_SPE;
+            pk4.IV_SPA = IV_SPA;
+            pk4.IV_SPD = IV_SPD;
+
+            pk4.IsEgg = IsEgg;
+            pk4.IsNicknamed = IsNicknamed;
+
+            pk4.RibbonG3Cool = RibbonG3Cool;
+            pk4.RibbonG3CoolSuper = RibbonG3CoolSuper;
+            pk4.RibbonG3CoolHyper = RibbonG3CoolHyper;
+            pk4.RibbonG3CoolMaster = RibbonG3CoolMaster;
+
+            pk4.RibbonG3Beauty = RibbonG3Beauty;
+            pk4.RibbonG3BeautySuper = RibbonG3BeautySuper;
+            pk4.RibbonG3BeautyHyper = RibbonG3BeautyHyper;
+            pk4.RibbonG3BeautyMaster = RibbonG3BeautyMaster;
+
+            pk4.RibbonG3Cute = RibbonG3Cute;
+            pk4.RibbonG3CuteSuper = RibbonG3CuteSuper;
+            pk4.RibbonG3CuteHyper = RibbonG3CuteHyper;
+            pk4.RibbonG3CuteMaster = RibbonG3CuteMaster;
+
+            pk4.RibbonG3Smart = RibbonG3Smart;
+            pk4.RibbonG3SmartSuper = RibbonG3SmartSuper;
+            pk4.RibbonG3SmartHyper = RibbonG3SmartHyper;
+            pk4.RibbonG3SmartMaster = RibbonG3SmartMaster;
+
+            pk4.RibbonG3Tough = RibbonG3Tough;
+            pk4.RibbonG3ToughSuper = RibbonG3ToughSuper;
+            pk4.RibbonG3ToughHyper = RibbonG3ToughHyper;
+            pk4.RibbonG3ToughMaster = RibbonG3ToughMaster;
+
+            pk4.RibbonChampionG3Hoenn = RibbonChampionG3Hoenn;
+            pk4.RibbonWinning = RibbonWinning;
+            pk4.RibbonVictory = RibbonVictory;
+            pk4.RibbonArtist = RibbonArtist;
+            pk4.RibbonEffort = RibbonEffort;
+            pk4.RibbonChampionBattle = RibbonChampionBattle;
+            pk4.RibbonChampionRegional = RibbonChampionRegional;
+            pk4.RibbonChampionNational = RibbonChampionNational;
+            pk4.RibbonCountry = RibbonCountry;
+            pk4.RibbonNational = RibbonNational;
+            pk4.RibbonEarth = RibbonEarth;
+
+            pk4.RibbonWorld = true; // indicates to me its a backwards sent pokemon
+
+            pk4.FatefulEncounter = FatefulEncounter;
+            pk4.Gender = Gender;
+            pk4.AltForm = 0; // cancel out any form
+            pk4.Nickname = Nickname;
+            pk4.Version = Version;
+
+            pk4.RibbonG4Cool = RibbonG4Cool;
+            pk4.RibbonG4CoolGreat = RibbonG4CoolGreat;
+            pk4.RibbonG4CoolUltra = RibbonG4CoolUltra;
+            pk4.RibbonG4CoolMaster = RibbonG4CoolMaster;
+
+            pk4.RibbonG4Beauty = RibbonG4Beauty;
+            pk4.RibbonG4BeautyGreat = RibbonG4BeautyGreat;
+            pk4.RibbonG4BeautyUltra = RibbonG4BeautyUltra;
+            pk4.RibbonG4BeautyMaster = RibbonG4BeautyMaster;
+
+            pk4.RibbonG4Cute = RibbonG4Cute;
+            pk4.RibbonG4CuteGreat = RibbonG4CuteGreat;
+            pk4.RibbonG4CuteUltra = RibbonG4CuteUltra;
+            pk4.RibbonG4CuteMaster = RibbonG4CuteMaster;
+
+            pk4.RibbonG4Smart = RibbonG4Smart;
+            pk4.RibbonG4SmartGreat = RibbonG4SmartGreat;
+            pk4.RibbonG4SmartUltra = RibbonG4SmartUltra;
+            pk4.RibbonG4SmartMaster = RibbonG4SmartMaster;
+
+            pk4.RibbonG4Tough = RibbonG4Tough;
+            pk4.RibbonG4ToughGreat = RibbonG4ToughGreat;
+            pk4.RibbonG4ToughUltra = RibbonG4ToughUltra;
+            pk4.RibbonG4ToughMaster = RibbonG4ToughMaster;
+
+            pk4.RIBA_4 = RIBA_4;
+            pk4.RIBA_5 = RIBA_5;
+            pk4.RIBA_6 = RIBA_6;
+            pk4.RIBA_7 = RIBA_7;
+            pk4.RIBB_0 = RIBB_0;
+            pk4.RIBB_1 = RIBB_1;
+            pk4.RIBB_2 = RIBB_2;
+            pk4.RIBB_3 = RIBB_3;
+            pk4.RIBB_4 = RIBB_4;
+            pk4.RIBB_5 = RIBB_5;
+            pk4.RIBB_6 = RIBB_6;
+            pk4.RIBB_7 = RIBB_7;
+
+            pk4.OT_Name = OT_Name;
+            pk4.Egg_Location = Egg_Location;
+            pk4.Met_Location = Met_Location;
+            pk4.PKRS_Days = PKRS_Days;
+            pk4.PKRS_Strain = PKRS_Strain;
+            pk4.Ball = Ball;
+            pk4.Met_Level = Met_Level;
+            pk4.OT_Gender = OT_Gender;
+            pk4.EncounterType = EncounterType;
+
+            // i dont think i should set this either
+            pk4.Stat_Level = Stat_Level;
+            pk4.Stat_HPCurrent = Stat_HPCurrent;
+            pk4.Stat_HPMax = Stat_HPMax;
+            pk4.Stat_ATK = Stat_ATK;
+            pk4.Stat_DEF = Stat_DEF;
+            pk4.Stat_SPE = Stat_SPE;
+            pk4.Stat_SPA = Stat_SPA;
+            pk4.Stat_SPD = Stat_SPD;
+
+            return pk4;
+        }
+
         public PK6 convertToPK6()
         {
             PK6 pk6 = new PK6 // Convert away!
