@@ -660,12 +660,17 @@ namespace PKHeX
                     return;
                 int savshift = sdr == DialogResult.Yes ? 0 : 0x7F000;
                 byte[] psdata = input.Skip(0x5400 + savshift).Take(SaveUtil.SIZE_G6ORAS).ToArray();
-                if (BitConverter.ToUInt32(psdata, psdata.Length - 0x1F0) != SaveUtil.BEEF)
-                    Array.Resize(ref psdata, SaveUtil.SIZE_G6XY);
-                if (BitConverter.ToUInt32(psdata, psdata.Length - 0x1F0) != SaveUtil.BEEF)
+
+                if (BitConverter.ToUInt32(psdata, SaveUtil.SIZE_G6ORAS - 0x1F0) == SaveUtil.BEEF)
+                    Array.Resize(ref psdata, SaveUtil.SIZE_G6ORAS); // set to ORAS size
+                else if (BitConverter.ToUInt32(psdata, SaveUtil.SIZE_G6XY - 0x1F0) == SaveUtil.BEEF)
+                    Array.Resize(ref psdata, SaveUtil.SIZE_G6XY); // set to X/Y size
+                else if (BitConverter.ToUInt32(psdata, SaveUtil.SIZE_G7SM - 0x1F0) == SaveUtil.BEEF)
+                    Array.Resize(ref psdata, SaveUtil.SIZE_G7SM); // set to S/M size
+                else
                 { Util.Error("The data file is not a valid save file", path); return; }
 
-                openSAV(new SAV6(psdata), path);
+                openSAV(SaveUtil.getVariantSAV(psdata), path);
             }
             #endregion
             #region SAV/PKM
@@ -1083,6 +1088,9 @@ namespace PKHeX
             // Recenter PKM SubEditors
             FLP_PKMEditors.Location = new Point((Tab_OTMisc.Width - FLP_PKMEditors.Width) / 2, FLP_PKMEditors.Location.Y);
 
+            bool init = fieldsInitialized;
+            fieldsInitialized = fieldsLoaded = false;
+
             switch (SAV.Generation)
             {
                 case 1:
@@ -1151,8 +1159,6 @@ namespace PKHeX
                     TB_Secure2.Text = SAV.Secure2?.ToString("X16");
                     break;
             }
-            bool init = fieldsInitialized;
-            fieldsInitialized = fieldsLoaded = false;
             pkm = pkm.GetType() != SAV.PKMType ? SAV.BlankPKM : pk;
             if (pkm.Format < 3)
                 pkm = SAV.BlankPKM;
@@ -1551,10 +1557,10 @@ namespace PKHeX
 
                 if (ekx == null) return;
                 
-                if (ekx.Length != SAV.SIZE_STORED) { Util.Alert($"Decoded data not {SAV.SIZE_STORED} bytes.", $"QR Data Size: {SAV.SIZE_STORED}"); }
+                PKM pk = PKMConverter.getPKMfromBytes(ekx);
+                if (pk == null) { Util.Alert("Decoded data not a valid PKM.", $"QR Data Size: {ekx.Length}"); }
                 else
                 {
-                    PKM pk = PKMConverter.getPKMfromBytes(ekx);
                     if (!pk.Valid || pk.Species <= 0)
                     { Util.Alert("Invalid data detected."); return; }
 
@@ -1570,25 +1576,24 @@ namespace PKHeX
                 if (!verifiedPKM()) return;
                 PKM pkx = preparePKM();
                 byte[] ekx = pkx.EncryptedBoxData;
+
                 const string server = "http://loadcode.projectpokemon.org/b1s1.html#"; // Rehosted with permission from LC/MS -- massive thanks!
                 Image qr;
                 switch (pkx.Format)
                 {
-                    case 6:
-                        qr = QR.getQRImage(ekx, server);
-                        break;
                     case 7:
                         qr = QR7.GenerateQRCode7((PK7) pkx);
                         break;
                     default:
-                        return;
+                        qr = QR.getQRImage(ekx, pkx.Format == 6 ? server : "null/#");
+                        break;
                 }
 
                 if (qr == null) return;
 
                 string[] r = pkx.QRText;
                 const string refURL = "PKHeX @ ProjectPokemon.org";
-                new QR(qr, dragout.Image, r[0], r[1], r[2], $"{refURL} ({pkx.GetType().Name})").ShowDialog();
+                new QR(qr, dragout.Image, r[0], r[1], r[2], $"{refURL} ({pkx.GetType().Name})", pkx).ShowDialog();
             }
         }
         private void clickFriendship(object sender, EventArgs e)
@@ -1804,6 +1809,10 @@ namespace PKHeX
                 if (m.Length > 4)
                     m = m.Skip(m.Length - 4).ToArray();
                 Array.Resize(ref m, 4);
+
+                if (pkm.Moves.SequenceEqual(m))
+                    return;
+
                 string r = string.Join(Environment.NewLine, m.Select(v => v >= GameStrings.movelist.Length ? "ERROR" : GameStrings.movelist[v]));
                 if (DialogResult.Yes != Util.Prompt(MessageBoxButtons.YesNo, "Apply suggested current moves?", r))
                     return;
@@ -1816,6 +1825,10 @@ namespace PKHeX
             else if (sender == GB_RelearnMoves)
             {
                 int[] m = Legality.getSuggestedRelearn();
+
+                if (pkm.RelearnMoves.SequenceEqual(m))
+                    return;
+
                 string r = string.Join(Environment.NewLine, m.Select(v => v >= GameStrings.movelist.Length ? "ERROR" : GameStrings.movelist[v]));
                 if (DialogResult.Yes != Util.Prompt(MessageBoxButtons.YesNo, "Apply suggested relearn moves?", r))
                     return;
@@ -2689,7 +2702,7 @@ namespace PKHeX
         {
             ((ComboBox)sender).DroppedDown = false;
         }
-        private void showLegality(PKM pk, bool tabs, bool verbose)
+        private void showLegality(PKM pk, bool tabs, bool verbose, bool skipMoveRepop = false)
         {
             LegalityAnalysis la = new LegalityAnalysis(pk);
             if (!la.Parsed)
@@ -2698,7 +2711,7 @@ namespace PKHeX
                 return;
             }
             if (tabs)
-                updateLegality(la);
+                updateLegality(la, skipMoveRepop);
             Util.Alert(verbose ? la.VerboseReport : la.Report);
         }
         private void updateLegality(LegalityAnalysis la = null, bool skipMoveRepop = false)
@@ -3357,6 +3370,9 @@ namespace PKHeX
         }
         private void updateU64(object sender, EventArgs e)
         {
+            if (!fieldsLoaded)
+                return;
+
             TextBox tb = sender as TextBox;
             if (tb?.Text.Length == 0)
             {
