@@ -163,16 +163,20 @@ namespace PKHeX
                             pkm = null; // pkm.convertPK1toPK7();
                         break;
                     case "PK2":
-                        //if (PKMType == typeof (PK1))
-                        //{
-                        //    if (pk.Species > 151)
-                        //    {
-                        //        comment = $"Cannot convert a {PKX.getSpeciesName(pkm.Species, ((PK2)pkm).Japanese ? 1 : 2)} to {PKMType.Name}";
-                        //        return null;
-                        //    }
-                        //    pkm = ((PK2) pk).convertToPK1();
-                        //}
-                        //else
+                        if (PKMType == typeof(PK1))
+                        {
+                            if (pk.Species > 151)
+                            {
+                                comment = $"Cannot convert a {PKX.getSpeciesName(pkm.Species, ((PK2)pkm).Japanese ? 1 : 2)} to {PKMType.Name}";
+                                return null;
+                            }
+                            pkm = ((PK2)pk).convertToPK1();
+                        }
+                        else if (PKMType == typeof(PK3))
+                        {
+                            pkm = ((PK2)pk).convertToPK3();
+                        }
+                        else
                             pkm = null;
                         break;
                     case "CK3":

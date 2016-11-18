@@ -350,6 +350,71 @@ namespace PKHeX
 
             return pk1;
         }
+
+        public PK3 convertToPK3()
+        {
+            PK3 pk3 = new PK3();
+            pk3.Nature = (int)PKHeX.Nature.Hardy;
+            pk3.AltForm = 0;
+            pk3.IsNicknamed = IsNicknamed;
+            pk3.Gender = Gender;
+            pk3.CurrentFriendship = CurrentFriendship;
+            pk3.Ability = Ability; // huh?
+            //pk3.CurrentHandler
+            pk3.Egg_Location = Egg_Location;
+            pk3.TID = TID;
+            pk3.SID = SID;
+            pk3.Nickname = Nickname;
+            pk3.Language = Language;
+            pk3.OT_Name = OT_Name;
+            pk3.Sanity = Sanity;
+            pk3.Species = Species;
+            pk3.HeldItem = HeldItem;
+            pk3.EXP = EXP;
+            pk3.Move1 = Move1;
+            pk3.Move2 = Move2;
+            pk3.Move3 = Move3;
+            pk3.Move4 = Move4;
+            pk3.Move1_PPUps = Move1_PPUps;
+            pk3.Move2_PPUps = Move2_PPUps;
+            pk3.Move3_PPUps = Move3_PPUps;
+            pk3.Move4_PPUps = Move4_PPUps;
+            pk3.Move1_PP = getMovePP(Move1, Move1_PPUps);
+            pk3.Move2_PP = getMovePP(Move2, Move2_PPUps);
+            pk3.Move3_PP = getMovePP(Move3, Move3_PPUps);
+            pk3.Move4_PP = getMovePP(Move4, Move4_PPUps);
+            pk3.PKRS_Days = PKRS_Days;
+            pk3.PKRS_Strain = PKRS_Strain;
+            pk3.Met_Location = Met_Location;
+            pk3.Met_Level = Met_Level;
+            pk3.Version = Version;
+            pk3.Ball = 4; // pokeball
+            pk3.OT_Gender = OT_Gender;
+
+            // todo need to overhaul - scale ev's, and set hp type based upon old hidden power
+            pk3.EV_HP = EV_HP;
+            pk3.EV_ATK = EV_ATK;
+            pk3.EV_DEF = EV_DEF;
+            pk3.EV_SPE = EV_SPE;
+            pk3.EV_SPA = EV_SPA;
+            pk3.EV_SPD = EV_SPD;
+            pk3.IV_HP = IV_HP * 2;
+            pk3.IV_ATK = IV_ATK * 2;
+            pk3.IV_DEF = IV_DEF * 2;
+            pk3.IV_SPE = IV_SPE * 2;
+            pk3.IV_SPA = IV_SPA * 2;
+            pk3.IV_SPD = IV_SPD * 2;
+            pk3.IsEgg = IsEgg;
+            pk3.RibbonWorld = true;
+            pk3.FatefulEncounter = FatefulEncounter;
+
+            if (IsShiny)
+                pk3.setShinyPID();
+            else
+                pk3.PID = PKX.getRandomPID(pk3.Species, pk3.Gender, pk3.Version, pk3.Nature, pk3.Format, (uint)(1 * 0x10001));
+            pk3.Checksum = CalculateChecksum();
+            return pk3;
+        }
     }
 
     public class PokemonList2
