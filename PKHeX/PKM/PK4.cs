@@ -432,75 +432,17 @@ namespace PKHeX
         public PK3 convertToPK3()
         {
             PK3 pk3 = new PK3();
-            pk3.EncryptionConstant = EncryptionConstant;
-            pk3.Nature = Nature;
-            pk3.AltForm = AltForm;
-            pk3.IsNicknamed = IsNicknamed;
-            pk3.Gender = Gender;
-            //pk3.CurrentFriendship = CurrentFriendship;
-            pk3.Ability = Ability; // TODO revert any hidden abilities
-            pk3.CurrentHandler = CurrentHandler;
-            pk3.Egg_Location = Egg_Location;
-            pk3.PID = PID;
-            pk3.TID = TID;
-            pk3.SID = SID;
-            pk3.Nickname = Nickname;
-            pk3.Language = Language;
-            pk3.OT_Name = OT_Name;
-            pk3.Checksum = Checksum;
-            pk3.Sanity = Sanity;
-            pk3.Species = Species;
-            pk3.HeldItem = HeldItem; 
-            pk3.EXP = EXP;
-            pk3.OT_Friendship = OT_Friendship;
-            pk3.Move1 = Move1;
-            pk3.Move2 = Move2;
-            pk3.Move3 = Move3;
-            pk3.Move4 = Move4;
-            pk3.Move1_PPUps = Move1_PPUps;
-            pk3.Move2_PPUps = Move2_PPUps;
-            pk3.Move3_PPUps = Move3_PPUps;
-            pk3.Move4_PPUps = Move4_PPUps;
+
+            TransferPropertiesWithReflection(this, pk3);
 
             // Fix PP
             pk3.Move1_PP = pk3.getMovePP(pk3.Move1, pk3.Move1_PPUps);
             pk3.Move2_PP = pk3.getMovePP(pk3.Move2, pk3.Move2_PPUps);
             pk3.Move3_PP = pk3.getMovePP(pk3.Move3, pk3.Move3_PPUps);
             pk3.Move4_PP = pk3.getMovePP(pk3.Move4, pk3.Move4_PPUps);
-
-            //pk3.MarkValue = MarkValue;
-            pk3.EV_HP = EV_HP;
-            pk3.EV_ATK = EV_ATK;
-            pk3.EV_DEF = EV_DEF;
-            pk3.EV_SPE = EV_SPE;
-            pk3.EV_SPA = EV_SPA;
-            pk3.EV_SPD = EV_SPD;
-
-            pk3.CNT_Cool = CNT_Cool;
-            pk3.CNT_Beauty = CNT_Beauty;
-            pk3.CNT_Cute = CNT_Cute;
-            pk3.CNT_Smart = CNT_Smart;
-            pk3.CNT_Tough = CNT_Tough;
-            pk3.CNT_Sheen = CNT_Sheen;
-
-            pk3.PKRS_Days = PKRS_Days;
-            pk3.PKRS_Strain = PKRS_Strain;
-
-            //pk3.Met_Location = Met_Location; // todo
-            pk3.Met_Level = Met_Level;
-            pk3.Version = Version; // todo - lets see what happens here
-            pk3.Ball = Ball;
-            pk3.OT_Gender = OT_Gender;
-            pk3.IV32 = IV32;
-            pk3.IV_HP = IV_HP;
-            pk3.IV_ATK = IV_ATK;
-            pk3.IV_DEF = IV_DEF;
-            pk3.IV_SPE = IV_SPE;
-            pk3.IV_SPA = IV_SPA;
-            pk3.IV_SPD = IV_SPD;
-
-            pk3.IsEgg = IsEgg;
+            
             pk3.AbilityNumber = AbilityNumber;
+            pk3.RibbonWorld = true; // i'm using this to indicate that the pokemon has come from a later game.
 
             // todo
             //pk3.RibbonCountG3Cool;
@@ -508,33 +450,7 @@ namespace PKHeX
             //pk3.RibbonCountG3Cute;
             //pk3.RibbonCountG3Smart;
             //pk3.RibbonCountG3CoolTough;
-
-
-            pk3.RibbonChampionG3Hoenn = RibbonChampionG3Hoenn;
-            pk3.RibbonWinning = RibbonWinning;
-            pk3.RibbonVictory = RibbonVictory;
-            pk3.RibbonArtist = RibbonArtist;
-            pk3.RibbonEffort = RibbonEffort;
-            pk3.RibbonChampionBattle = RibbonChampionBattle;
-            pk3.RibbonChampionRegional = RibbonChampionRegional;
-            pk3.RibbonChampionNational = RibbonChampionNational;
-            pk3.RibbonCountry = RibbonCountry;
-            pk3.RibbonNational = RibbonNational;
-            pk3.RibbonEarth = RibbonEarth;
-            pk3.FatefulEncounter = FatefulEncounter;
-            pk3.Stat_Level = Stat_Level;
-            pk3.Stat_HPCurrent = Stat_HPCurrent;
-
-            // todo i dont think i should set these
-            //pk3.Stat_HPMax = this.Stat_HPMax;
-            //pk3.Stat_ATK = this.Stat_ATK;
-            //pk3.Stat_DEF = this.Stat_DEF;
-            //pk3.Stat_SPE = this.Stat_SPE;
-            //pk3.Stat_SPA = this.Stat_SPA;
-            //pk3.Stat_SPD = this.Stat_SPD;
-
-            pk3.RibbonWorld = true; // i'm using this to indicate that the pokemon has come from a later game.
-
+            
             return pk3;
         }
 
