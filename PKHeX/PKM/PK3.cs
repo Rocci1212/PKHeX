@@ -183,6 +183,98 @@ namespace PKHeX
             return false;
         }
 
+        public PK2 convertToPK2()
+        {
+            PK2 pk2 = new PK2();
+            TransferPropertiesWithReflection(this, pk2);
+
+            int gv = pk2.PersonalInfo.Gender;
+            int minAtk = 0;
+            int maxAtk = 15;
+
+            switch (gv)
+            {
+                case 31:
+                    if (this.Gender == 1)
+                        maxAtk = 1;
+                    else
+                        minAtk = 2;
+                    break;
+                case 63:
+                    if (this.Gender == 1)
+                        maxAtk = 4;
+                    else
+                        minAtk = 5;
+                    break;
+                case 127:
+                    if (this.Gender == 1)
+                        maxAtk = 6;
+                    else
+                        minAtk = 7;
+                    break;
+                case 191:
+                    if (this.Gender == 1)
+                        maxAtk = 11;
+                    else
+                        minAtk = 12;
+                    break;
+            }
+
+            //int[] idealProperties = new int[] { IV_HP / 2, IV_ATK / 2, IV_DEF / 2, IV_SPE / 2, ((IV_SPA + IV_SPD) / 4) };
+
+            int atkModulus = this.HPType / 4;
+            int defModulus = this.HPType % 4;
+
+            bool shinynessImpossible = this.Gender == 1 && gv == 31 && this.IsShiny == true;
+            bool hpTypeIsImpossible = (this.Gender == 1 && gv == 31 && this.HPType >= 8) || (this.HPType % 4 != 2 && atkModulus < 2);
+
+            if (this.IsShiny && !shinynessImpossible)
+            {
+                pk2.IV_SPE = 10;
+                pk2.IV_SPC = 10;
+                pk2.IV_DEF = 10;
+                pk2.IV_ATK = IV_ATK / 2;
+
+                if (!hpTypeIsImpossible)
+                {
+                    // find the closest valid atk dv
+                    int offSet = (pk2.IV_ATK - atkModulus) % 4;
+                }
+            }
+            else
+            {
+                pk2.IV_SPE = IV_SPE / 2;
+                pk2.IV_SPC = (IV_SPA + IV_SPD) / 4;
+                pk2.IV_DEF = IV_DEF / 2;
+                pk2.IV_ATK = IV_ATK / 2;
+
+                if (!hpTypeIsImpossible)
+                {
+                    // find the closest valid atk dv
+
+                    // find the closest valid def dv
+                }
+            }
+            /*
+            
+            if hptype == 0 then atk % 4 = 0 and def % 4 = 0
+            if hptype == 1 then atk % 4 = 0 and def % 4 = 1
+            if hptype == 2 then atk % 4 = 0 and def % 4 = 2
+            if hptype == 3 then atk % 4 = 0 and def % 4 = 3
+            if hptype == 4 then atk % 4 = 1 then def % 4 = 0
+
+            so int atk modulus = hptype / 4
+            and def modulus = hptype % 4
+            */
+
+            pk2.IV_ATK = IV_ATK / 2; // this one is kind of locked in - changing its oddity will change its hp type, and could also change gender
+            pk2.IV_DEF = IV_DEF / 2; // this one is kind of locked in - changing its oddity will change its hp type
+            pk2.IV_SPE = IV_SPE / 2;
+            pk2.IV_SPC = (IV_SPA + IV_SPD) / 4; // changing this isnt worth it i guess right? 1 pt change either way wont get us any closer
+
+            return pk2;
+        }
+
         public PK4 convertToPK4()
         {
             DateTime moment = DateTime.Now;
