@@ -154,30 +154,64 @@ namespace PKHeX
                 switch (fromType.Name)
                 {
                     case "PK1":
+                        pkm = PKMType == typeof(PK2) ? ((PK1)pk).convertToPK2() : null;
                         if (toFormat == 2)
+                            break;
+                        pkm = ((PK2)pk).convertToPK3();
+                        if (toFormat == 3)
+                            break;
+                        pkm = ((PK3)pkm).convertToPK4();
+                        if (toFormat == 4)
                         {
-                            pkm = PKMType == typeof (PK2) ? ((PK1) pk).convertToPK2() : null;
+                            if (PKMType == typeof(BK4))
+                                pkm = ((PK4)pkm).convertToBK4();
                             break;
                         }
-                        if (toFormat == 7)
-                            pkm = null; // pkm.convertPK1toPK7();
+                        pkm = ((PK4)pkm).convertToPK5();
+                        if (toFormat == 5)
+                            break;
+                        pkm = ((PK5)pkm).convertToPK6();
+                        if (toFormat == 6)
+                            break;
+                        pkm = new PK7(pkm.Data, pkm.Identifier);
                         break;
+                        //if (toFormat == 7)
+                        //    pkm = null; // pkm.convertPK1toPK7();
+                        //break;
                     case "PK2":
-                        if (PKMType == typeof(PK1))
+                        //if (PKMType == typeof(PK1))
+                        //{
+                        //    if (pk.Species > 151)
+                        //    {
+                        //        comment = $"Cannot convert a {PKX.getSpeciesName(pkm.Species, ((PK2)pkm).Japanese ? 1 : 2)} to {PKMType.Name}";
+                        //        return null;
+                        //    }
+                        //    pkm = ((PK2)pk).convertToPK1();
+                        //}
+                        //else if (PKMType == typeof(PK3))
+                        //{
+                        //    pkm = ((PK2)pk).convertToPK3();
+                        //}
+                        //else
+                        //    pkm = null;
+
+                        pkm = ((PK2)pk).convertToPK3();
+                        if (toFormat == 3)
+                            break;
+                        pkm = ((PK3)pkm).convertToPK4();
+                        if (toFormat == 4)
                         {
-                            if (pk.Species > 151)
-                            {
-                                comment = $"Cannot convert a {PKX.getSpeciesName(pkm.Species, ((PK2)pkm).Japanese ? 1 : 2)} to {PKMType.Name}";
-                                return null;
-                            }
-                            pkm = ((PK2)pk).convertToPK1();
+                            if (PKMType == typeof(BK4))
+                                pkm = ((PK4)pkm).convertToBK4();
+                            break;
                         }
-                        else if (PKMType == typeof(PK3))
-                        {
-                            pkm = ((PK2)pk).convertToPK3();
-                        }
-                        else
-                            pkm = null;
+                        pkm = ((PK4)pkm).convertToPK5();
+                        if (toFormat == 5)
+                            break;
+                        pkm = ((PK5)pkm).convertToPK6();
+                        if (toFormat == 6)
+                            break;
+                        pkm = new PK7(pkm.Data, pkm.Identifier);
                         break;
                     case "CK3":
                     case "XK3":
@@ -243,6 +277,9 @@ namespace PKHeX
                         break;
                     case "PK5":
                         pkm = ((PK5)pkm).convertToPK6();
+                        if (toFormat == 6)
+                            break;
+                        pkm = new PK7(pkm.Data, pkm.Identifier);
                         break;
                     case "PK6":
                         pkm = new PK7(pkm.Data, pkm.Identifier);
