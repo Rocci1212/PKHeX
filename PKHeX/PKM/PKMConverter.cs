@@ -220,6 +220,11 @@ namespace PKHeX
                         pkm = pkm.convertToPK3();
                         goto case "PK3"; // fall through
                     case "PK3":
+                        if (toFormat == 2)
+                        {
+                            pkm = ((PK3)pkm).convertToPK2();
+                            break;
+                        }
                         if (toFormat == 3) // Gen3 Inter-trading
                         {
                             switch (PKMType.Name)

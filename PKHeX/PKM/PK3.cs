@@ -226,19 +226,57 @@ namespace PKHeX
             int defModulus = this.HPType % 4;
 
             bool shinynessImpossible = this.Gender == 1 && gv == 31 && this.IsShiny == true;
-            bool hpTypeIsImpossible = (this.Gender == 1 && gv == 31 && this.HPType >= 8) || (this.HPType % 4 != 2 && atkModulus < 2);
+            bool hpTypeIsImpossible = (this.Gender == 1 && gv == 31) && 
+                (this.HPType >= 8 || (this.HPType % 4 != 2 && atkModulus < 2)); // wild guess at logic i think
 
             if (this.IsShiny && !shinynessImpossible)
             {
                 pk2.IV_SPE = 10;
                 pk2.IV_SPC = 10;
                 pk2.IV_DEF = 10;
-                pk2.IV_ATK = IV_ATK / 2;
+                switch (pk2.Gender)
+                { 
+                    case 0:
+                        pk2.IV_ATK = Math.Max(minAtk, IV_ATK / 2);
+                        break;
+                    case 1:
+                        pk2.IV_ATK = Math.Min(maxAtk, IV_ATK / 2);
+                        break;
+                    default:
+                        pk2.IV_ATK = IV_ATK / 2;
+                        break;
+                }
 
                 if (!hpTypeIsImpossible)
                 {
                     // find the closest valid atk dv
                     int offSet = (pk2.IV_ATK - atkModulus) % 4;
+                    switch (offSet)
+                    {
+                        case 0:
+                            break;
+                        case 1:
+                            // subtracting is easiest
+                            if (pk2.IV_ATK - 1 >= minAtk)
+                                pk2.IV_ATK = pk2.IV_ATK - 1;
+                            else
+                                pk2.IV_ATK = pk2.IV_ATK + 3;
+                            break;
+                        case 2:
+                            // add or subtract by 2
+                            if (pk2.IV_ATK + 2 <= maxAtk)
+                                pk2.IV_ATK = pk2.IV_ATK + 2;
+                            else
+                                pk2.IV_ATK = pk2.IV_ATK - 2;
+                            break;
+                        case 3:
+                            // adding is easiest
+                            if (pk2.IV_ATK + 1 <= maxAtk)
+                                pk2.IV_ATK = pk2.IV_ATK + 1;
+                            else
+                                pk2.IV_ATK = pk2.IV_ATK - 3;
+                            break;
+                    }
                 }
             }
             else
@@ -246,31 +284,80 @@ namespace PKHeX
                 pk2.IV_SPE = IV_SPE / 2;
                 pk2.IV_SPC = (IV_SPA + IV_SPD) / 4;
                 pk2.IV_DEF = IV_DEF / 2;
-                pk2.IV_ATK = IV_ATK / 2;
+                switch (Gender)
+                {
+                    case 0:
+                        pk2.IV_ATK = Math.Max(minAtk, IV_ATK / 2);
+                        break;
+                    case 1:
+                        pk2.IV_ATK = Math.Min(maxAtk, IV_ATK / 2);
+                        break;
+                    default:
+                        pk2.IV_ATK = IV_ATK / 2;
+                        break;
+                }
 
                 if (!hpTypeIsImpossible)
                 {
                     // find the closest valid atk dv
+                    int offSet = (pk2.IV_ATK - atkModulus) % 4;
+                    switch (offSet)
+                    {
+                        case 0:
+                            break;
+                        case 1:
+                            // subtracting is easiest
+                            if (pk2.IV_ATK - 1 >= minAtk)
+                                pk2.IV_ATK = pk2.IV_ATK - 1;
+                            else
+                                pk2.IV_ATK = pk2.IV_ATK + 3;
+                            break;
+                        case 2:
+                            // add or subtract by 2
+                            if (pk2.IV_ATK + 2 <= maxAtk)
+                                pk2.IV_ATK = pk2.IV_ATK + 2;
+                            else
+                                pk2.IV_ATK = pk2.IV_ATK - 2;
+                            break;
+                        case 3:
+                            // adding is easiest
+                            if (pk2.IV_ATK + 1 <= maxAtk)
+                                pk2.IV_ATK = pk2.IV_ATK + 1;
+                            else
+                                pk2.IV_ATK = pk2.IV_ATK - 3;
+                            break;
+                    }
 
                     // find the closest valid def dv
+                    offSet = (pk2.IV_DEF - defModulus) % 4;
+                    switch (offSet)
+                    {
+                        case 0:
+                            break;
+                        case 1:
+                            // subtracting is easiest
+                            if (pk2.IV_DEF - 1 >= 0)
+                                pk2.IV_DEF = pk2.IV_DEF - 1;
+                            else
+                                pk2.IV_DEF = pk2.IV_DEF + 3;
+                            break;
+                        case 2:
+                            // add or subtract by 2
+                            if (pk2.IV_DEF + 2 <= 15)
+                                pk2.IV_DEF = pk2.IV_DEF + 2;
+                            else
+                                pk2.IV_DEF = pk2.IV_DEF - 2;
+                            break;
+                        case 3:
+                            // adding is easiest
+                            if (pk2.IV_DEF + 1 <= 15)
+                                pk2.IV_DEF = pk2.IV_DEF + 1;
+                            else
+                                pk2.IV_DEF = pk2.IV_DEF - 3;
+                            break;
+                    }
                 }
             }
-            /*
-            
-            if hptype == 0 then atk % 4 = 0 and def % 4 = 0
-            if hptype == 1 then atk % 4 = 0 and def % 4 = 1
-            if hptype == 2 then atk % 4 = 0 and def % 4 = 2
-            if hptype == 3 then atk % 4 = 0 and def % 4 = 3
-            if hptype == 4 then atk % 4 = 1 then def % 4 = 0
-
-            so int atk modulus = hptype / 4
-            and def modulus = hptype % 4
-            */
-
-            pk2.IV_ATK = IV_ATK / 2; // this one is kind of locked in - changing its oddity will change its hp type, and could also change gender
-            pk2.IV_DEF = IV_DEF / 2; // this one is kind of locked in - changing its oddity will change its hp type
-            pk2.IV_SPE = IV_SPE / 2;
-            pk2.IV_SPC = (IV_SPA + IV_SPD) / 4; // changing this isnt worth it i guess right? 1 pt change either way wont get us any closer
 
             return pk2;
         }
