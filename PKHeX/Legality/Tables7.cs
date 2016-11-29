@@ -53,7 +53,7 @@ namespace PKHeX
             306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, 325,
             326, 327, 499, 534, 535, 537, 538, 539, 540, 541, 542, 543, 544, 545, 546, 547, 548, 549, 550, 551,
             552, 553, 554, 555, 556, 557, 558, 559, 560, 561, 562, 563, 564, 571, 572, 573, 580, 581, 582, 583,
-            584, 585, 586, 587, 588, 589, 590, 639, 640, 644, 645, 646, 647, 648, 649, 650, 656, 657, 658, 659,
+            584, 585, 586, 587, 588, 589, 590, 639, 640, 644,      646, 647, 648, 649, 650, 656, 657, 658, 659,
             660, 661, 662, 663, 664, 665, 666, 667, 668, 669, 670, 671, 672, 673, 674, 675, 676, 677, 678, 679,
             680, 681, 682, 683, 684, 685, 699, 704, 710, 711, 715, 752, 753, 754, 755, 756, 757, 758, 759, 760,
             761, 762, 763, 764, 767, 768, 769, 770, 795, 796, 844, 849, 853, 854, 855, 856, 879, 880, 881, 882,
@@ -84,7 +84,7 @@ namespace PKHeX
         };
         internal static readonly ushort[] Pouch_Medicine_SM = { // 32
             17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 65, 66, 67, 134,
-            504, 565, 566, 567, 568, 569, 570, 591, 708, 709,
+            504, 565, 566, 567, 568, 569, 570, 591, 645, 708, 709,
             852,
         };
         internal static readonly ushort[] Pouch_Berries_SM = {
@@ -231,7 +231,42 @@ namespace PKHeX
             new EncounterStatic { Species = 785, Form = 0, Level = 60, Relearn = new[]{000, 000, 000, 000}, Shiny = false, Ability = 1, Location = 030, }, // Tapu Koko
             new EncounterStatic { Species = 542, Form = 0, Level = 57, Relearn = new[]{382, 437, 014, 494}, Location = -1, }, // Leavanny
             
+            new EncounterStatic { Species = 718, Form = 0, Level = 30, Relearn = new[]{000, 000, 000, 000}, Shiny = false, Ability = 1, Location = 118, IV3 = true, }, // Zygarde
+            new EncounterStatic { Species = 718, Form = 1, Level = 30, Relearn = new[]{000, 000, 000, 000}, Shiny = false, Ability = 1, Location = 118, IV3 = true, }, // Zygarde
+            new EncounterStatic { Species = 718, Form = 2, Level = 30, Relearn = new[]{000, 000, 000, 000}, Shiny = false, Ability = 1, Location = 118, IV3 = true, }, // Zygarde
+            new EncounterStatic { Species = 718, Form = 3, Level = 30, Relearn = new[]{000, 000, 000, 000}, Shiny = false, Ability = 1, Location = 118, IV3 = true, }, // Zygarde
+            
             new EncounterStatic { Species = 718, Form = 0, Level = 50, Relearn = new[]{000, 000, 000, 000}, Shiny = false, Ability = 1, Location = 118, IV3 = true, }, // Zygarde
+            new EncounterStatic { Species = 718, Form = 1, Level = 50, Relearn = new[]{000, 000, 000, 000}, Shiny = false, Ability = 1, Location = 118, IV3 = true, }, // Zygarde
+            new EncounterStatic { Species = 718, Form = 2, Level = 50, Relearn = new[]{000, 000, 000, 000}, Shiny = false, Ability = 1, Location = 118, IV3 = true, }, // Zygarde
+            new EncounterStatic { Species = 718, Form = 3, Level = 50, Relearn = new[]{000, 000, 000, 000}, Shiny = false, Ability = 1, Location = 118, IV3 = true, }, // Zygarde
+
+            new EncounterStatic { Species = 021, Location = 30016, Level = -1, }, // Spearow
+            new EncounterStatic { Species = 041, Location = 30016, Level = -1, }, // Zubat
+            new EncounterStatic { Species = 060, Location = 30016, Level = -1, }, // Poliwag
+            new EncounterStatic { Species = 064, Location = 30016, Level = -1, }, // Kadabra
+            new EncounterStatic { Species = 081, Location = 30016, Level = -1, }, // Magnemite
+            new EncounterStatic { Species = 090, Location = 30016, Level = -1, }, // Shellder
+            new EncounterStatic { Species = 092, Location = 30016, Level = -1, }, // Gastly
+            new EncounterStatic { Species = 120, Location = 30016, Level = -1, }, // Staryu
+            new EncounterStatic { Species = 123, Location = 30016, Level = -1, }, // Scyther
+            new EncounterStatic { Species = 127, Location = 30016, Level = -1, }, // Pinsir
+            new EncounterStatic { Species = 131, Location = 30016, Level = -1, }, // Lapras
+            new EncounterStatic { Species = 198, Location = 30016, Level = -1, }, // Murkrow
+            new EncounterStatic { Species = 227, Location = 30016, Level = -1, }, // Skarmory
+            new EncounterStatic { Species = 278, Location = 30016, Level = -1, }, // Wingull
+            new EncounterStatic { Species = 375, Location = 30016, Level = -1, }, // Metang
+            new EncounterStatic { Species = 426, Location = 30016, Level = -1, }, // Drifblim
+            new EncounterStatic { Species = 429, Location = 30016, Level = -1, }, // Mismagius
+            new EncounterStatic { Species = 587, Location = 30016, Level = -1, }, // Emolga
+            new EncounterStatic { Species = 627, Location = 30016, Level = -1, }, // Rufflet
+            new EncounterStatic { Species = 629, Location = 30016, Level = -1, }, // Vullaby
+            new EncounterStatic { Species = 661, Location = 30016, Level = -1, }, // Fletchling
+            new EncounterStatic { Species = 703, Location = 30016, Level = -1, }, // Carbink
+            new EncounterStatic { Species = 707, Location = 30016, Level = -1, }, // Klefki
+            new EncounterStatic { Species = 709, Location = 30016, Level = -1, }, // Trevenant
+            new EncounterStatic { Species = 731, Location = 30016, Level = -1, }, // Pikipek
+            new EncounterStatic { Species = 771, Location = 30016, Level = -1, }, // Pyukumuku
         };
         private static readonly EncounterTrade[] TradeGift_SM = // @ a\1\5\5
         {
@@ -326,15 +361,47 @@ namespace PKHeX
         };
         internal static readonly int[] Inherit_SafariMale =
         {
-            081, 100, 128, 337, 338, 374, 436,
+            128, // Tauros
         };
-        internal static readonly int[] InheritDreamMale =
+        internal static readonly int[] Inherit_SafariDitto =
         {
-            001, 004, 007, 25, 81, 100, 236, 120, 128, 137,
-            172,
-            252, 255, 258, 337, 338, 343, 374,
-            387, 390, 393, 436, 479,
-            511, 513, 515, 538, 539, 574, 599, 622,
+            081, // Magnemite
+            100, // Voltorb
+            337, // Lunatone
+            338, // Solrock
+            374, // Beldum
+            436, // Bronzor
+        };
+        internal static readonly int[] Inherit_DreamMale =
+        {
+            // Starting with Gen7, Males pass Ball via breeding with Ditto.
+            001, 004, 007, // Gen1 Starters
+            025, // Pikachu
+            128, // Tauros
+            172, // Pichu
+            236, // Tyrogue (100% Male)
+            252, 255, 258, // Gen2 Starters
+            387, 390, 393, // Gen3 Starters
+            511, 513, 515, // Gen5 Monkeys
+            538, // Throh
+            539, // Sawk
+            574, // Gothita
+        };
+        internal static readonly int[] Inherit_DreamDitto =
+        {
+            // Not actually possible, but just store as documentation
+            081, // Magnemite
+            100, // Voltorb
+            120, // Staryu
+            137, // Porygon
+            337, // Lunatone
+            338, // Solrock
+            343, // Baltoy
+            374, // Beldum
+            436, // Bronzor
+            479, // Rotom
+            599, // Klink
+            622, // Golett
         };
         internal static readonly int[] Ban_Gen3Ball_AllowG7 =
         {
@@ -386,6 +453,8 @@ namespace PKHeX
 
             // No HMs
         };
+
+        internal static readonly int[] TypeTutor7 = {520, 519, 518, 338, 307, 308, 434, 620};
 
         internal static readonly int[] MovePP_SM =
         {

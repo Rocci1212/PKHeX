@@ -81,9 +81,13 @@ namespace PKHeX
             if (ident == null)
                 return null;
 
-            return EncounterArea.getArray(Data.unpackMini(tables, ident));
+            return getEncounterTables(tables, ident);
         }
-        private static EncounterArea[] addXYAltTiles(EncounterArea[] GameSlots, EncounterArea[] SpecialSlots)
+        private static EncounterArea[] getEncounterTables(byte[] mini, string ident)
+        {
+            return EncounterArea.getArray(Data.unpackMini(mini, ident));
+        }
+        private static EncounterArea[] addExtraTableSlots(EncounterArea[] GameSlots, EncounterArea[] SpecialSlots)
         {
             foreach (EncounterArea g in GameSlots)
             {
@@ -116,6 +120,11 @@ namespace PKHeX
                     area.Slots[i].AllowDexNav = area.Slots[i].Type != SlotType.Rock_Smash;
             }
         }
+        private static void MarkG7SMSlots(ref EncounterArea[] Areas)
+        {
+            foreach (EncounterSlot s in Areas.SelectMany(area => area.Slots))
+                s.Type = SlotType.SOS;
+        }
 
         static Legal() // Setup
         {
@@ -130,8 +139,8 @@ namespace PKHeX
                 var YSlots = getEncounterTables(GameVersion.Y);
                 MarkG6XYSlots(ref XSlots);
                 MarkG6XYSlots(ref YSlots);
-                SlotsX = addXYAltTiles(XSlots, SlotsXYAlt);
-                SlotsY = addXYAltTiles(YSlots, SlotsXYAlt);
+                SlotsX = addExtraTableSlots(XSlots, SlotsXYAlt);
+                SlotsY = addExtraTableSlots(YSlots, SlotsXYAlt);
 
                 SlotsA = getEncounterTables(GameVersion.AS);
                 SlotsO = getEncounterTables(GameVersion.OR);
@@ -144,20 +153,26 @@ namespace PKHeX
             {
                 StaticSN = getStaticEncounters(GameVersion.SN);
                 StaticMN = getStaticEncounters(GameVersion.MN);
-                SlotsSN = getEncounterTables(GameVersion.SN);
-                SlotsMN = getEncounterTables(GameVersion.MN);
+                var REG_SN = getEncounterTables(GameVersion.SN);
+                var REG_MN = getEncounterTables(GameVersion.MN);
+                var SOS_SN = getEncounterTables(Properties.Resources.encounter_sn_sos, "sm");
+                var SOS_MN = getEncounterTables(Properties.Resources.encounter_mn_sos, "sm");
+                MarkG7SMSlots(ref SOS_SN);
+                MarkG7SMSlots(ref SOS_MN);
+                SlotsSN = addExtraTableSlots(REG_SN, SOS_SN);
+                SlotsMN = addExtraTableSlots(REG_MN, SOS_MN);
 
                 Evolves7 = new EvolutionTree(Data.unpackMini(Properties.Resources.evos_sm, "sm"), GameVersion.SM, PersonalTable.SM, 802);
             }
         }
 
         // Moves
-        internal static IEnumerable<int> getValidMoves(PKM pkm, bool Tutor = true, bool Machine = true)
+        internal static IEnumerable<int> getValidMoves(PKM pkm, bool Tutor = true, bool Machine = true, bool MoveReminder = true)
         {
             GameVersion version = (GameVersion)pkm.Version;
             if (!pkm.IsUntraded)
                 version = GameVersion.Any;
-            return getValidMoves(pkm, version, LVL: true, Relearn: false, Tutor: Tutor, Machine: Machine); 
+            return getValidMoves(pkm, version, LVL: true, Relearn: false, Tutor: Tutor, Machine: Machine, MoveReminder: MoveReminder); 
         }
         internal static IEnumerable<int> getValidRelearn(PKM pkm, int skipOption)
         {
@@ -526,6 +541,20 @@ namespace PKHeX
             return curr.Count() >= poss.Count();
         }
 
+        internal static EncounterArea getCaptureLocation(PKM pkm)
+        {
+            return (from area in getEncounterSlots(pkm)
+                let slots = getValidEncounterSlots(pkm, area, pkm.AO).ToArray()
+                where slots.Any()
+                select new EncounterArea
+                {
+                    Location = area.Location, Slots = slots,
+                }).FirstOrDefault();
+        }
+        internal static EncounterStatic getStaticLocation(PKM pkm)
+        {
+            return getStaticEncounters(pkm).FirstOrDefault();
+        }
         internal static bool getCanBeCaptured(int species, int gen, GameVersion version = GameVersion.Any)
         {
             switch (gen)
@@ -771,31 +800,29 @@ namespace PKHeX
             IEnumerable<DexLevel> dl = getValidPreEvolutions(pkm);
             return table.Where(e => dl.Any(d => d.Species == e.Species));
         }
-        private static IEnumerable<int> getValidMoves(PKM pkm, GameVersion Version, bool LVL = false, bool Relearn = false, bool Tutor = false, bool Machine = false)
+        private static IEnumerable<int> getValidMoves(PKM pkm, GameVersion Version, bool LVL = false, bool Relearn = false, bool Tutor = false, bool Machine = false, bool MoveReminder = true)
         {
             List<int> r = new List<int> { 0 };
             int species = pkm.Species;
             int lvl = pkm.CurrentLevel;
-            if (pkm.Format >= 7)
-                lvl = 100; // Move reminder can teach any level in movepool now!
 
             // Special Type Tutors Availability
-            const bool moveTutor = true;
+            bool moveTutor = Tutor || MoveReminder; // Usually true, except when called for move suggestions (no tutored moves)
             
             if (FormChangeMoves.Contains(species)) // Deoxys & Shaymin & Giratina (others don't have extra but whatever)
             {
                 int formcount = pkm.PersonalInfo.FormeCount;
                 for (int i = 0; i < formcount; i++)
-                    r.AddRange(getMoves(pkm, species, lvl, i, moveTutor, Version, LVL, Tutor, Machine));
+                    r.AddRange(getMoves(pkm, species, lvl, i, moveTutor, Version, LVL, Tutor, Machine, MoveReminder));
                 if (Relearn) r.AddRange(pkm.RelearnMoves);
                 return r.Distinct().ToArray();
             }
 
-            r.AddRange(getMoves(pkm, species, lvl, pkm.AltForm, moveTutor, Version, LVL, Tutor, Machine));
+            r.AddRange(getMoves(pkm, species, lvl, pkm.AltForm, moveTutor, Version, LVL, Tutor, Machine, MoveReminder));
             IEnumerable<DexLevel> vs = getValidPreEvolutions(pkm);
 
             foreach (DexLevel evo in vs)
-                r.AddRange(getMoves(pkm, evo.Species, evo.Level, pkm.AltForm, moveTutor, Version, LVL, Tutor, Machine));
+                r.AddRange(getMoves(pkm, evo.Species, evo.Level, pkm.AltForm, moveTutor, Version, LVL, Tutor, Machine, MoveReminder));
 
             if (species == 479) // Rotom
                 r.Add(RotomMoves[pkm.AltForm]);
@@ -809,14 +836,14 @@ namespace PKHeX
             if (Relearn) r.AddRange(pkm.RelearnMoves);
             return r.Distinct().ToArray();
         }
-        private static IEnumerable<int> getMoves(PKM pkm, int species, int lvl, int form, bool moveTutor, GameVersion Version, bool LVL, bool specialTutors, bool Machine)
+        private static IEnumerable<int> getMoves(PKM pkm, int species, int lvl, int form, bool moveTutor, GameVersion Version, bool LVL, bool specialTutors, bool Machine, bool MoveReminder)
         {
             List<int> r = new List<int> { 0 };
             for (int gen = pkm.GenNumber; gen <= pkm.Format; gen++)
-               r.AddRange(getMoves(pkm, species, lvl, form, moveTutor, Version, LVL, specialTutors, Machine, gen));
+               r.AddRange(getMoves(pkm, species, lvl, form, moveTutor, Version, LVL, specialTutors, Machine, gen, MoveReminder));
             return r.Distinct();
         }
-        private static IEnumerable<int> getMoves(PKM pkm, int species, int lvl, int form, bool moveTutor, GameVersion Version, bool LVL, bool specialTutors, bool Machine, int Generation)
+        private static IEnumerable<int> getMoves(PKM pkm, int species, int lvl, int form, bool moveTutor, GameVersion Version, bool LVL, bool specialTutors, bool Machine, int Generation, bool MoveReminder)
         {
             List<int> r = new List<int>();
 
@@ -861,6 +888,8 @@ namespace PKHeX
                         {
                             int index = PersonalTable.SM.getFormeIndex(species, form);
                             PersonalInfo pi = PersonalTable.SM.getFormeEntry(species, form);
+                            if (MoveReminder)
+                                lvl = 100; // Move reminder can teach any level in movepool now!
 
                             if (LVL) r.AddRange(LevelUpSM[index].getMoves(lvl));
                             if (moveTutor) r.AddRange(getTutorMoves(pkm, species, form, specialTutors));
@@ -897,8 +926,13 @@ namespace PKHeX
         private static IEnumerable<int> getTutorMoves(PKM pkm, int species, int form, bool specialTutors)
         {
             PersonalInfo info = pkm.PersonalInfo;
-            // Type Tutors
-            List<int> moves = TypeTutor.Where((t, i) => info.TypeTutors[i]).ToList();
+            List<int> moves = new List<int>();
+
+            // Type Tutors -- Pledge moves and High BP moves switched places in G7+
+            if (pkm.Format <= 6)
+                moves.AddRange(TypeTutor6.Where((t, i) => info.TypeTutors[i]));
+            else if (pkm.Format >= 7)
+                moves.AddRange(TypeTutor7.Where((t, i) => info.TypeTutors[i]));
 
             // Varied Tutors
             //if (pkm.InhabitedGeneration(5) && Tutors)
