@@ -668,5 +668,69 @@ namespace PKHeX
         public override bool WasEventEgg => ((Egg_Location > 40000 && Egg_Location < 50000) || (FatefulEncounter && Egg_Location == 30002)) && Met_Level == 1;
         public override bool WasTradedEgg => Egg_Location == 30002;
         public override bool WasIngameTrade => Met_Location == 30001;
+
+        public override string RibbonDescription
+        {
+            get
+            {
+                string desc = "";
+
+                if (RibbonChampionKalos) { desc = "Kalos Champ;"; }
+                if (RibbonChampionG3Hoenn) { desc = "Gen 3 Hoenn Champ;"; }
+                if (RibbonChampionSinnoh) { desc = "Sinnoh Champ;"; }
+                if (RibbonBestFriends) { desc = "Best Friends;"; }
+                if (RibbonTraining) { desc = "Training;"; }
+                if (RibbonBattlerSkillful) { desc = "Skillful Battler;"; }
+                if (RibbonBattlerExpert) { desc = "Expert Battler;"; }
+                if (RibbonEffort) { desc = "Effort;"; }
+                if (RibbonAlert) { desc = "Alert;"; }
+                if (RibbonShock) { desc = "Shock;"; }
+                if (RibbonDowncast) { desc = "Downcast;"; }
+                if (RibbonCareless) { desc = "Careless;"; }
+                if (RibbonRelax) { desc = "Relax;"; }
+                if (RibbonSnooze) { desc = "Snooze;"; }
+                if (RibbonSmile) { desc = "Smile;"; }
+                if (RibbonGorgeous) { desc = "Gorgeous;"; }
+                if (RibbonRoyal) { desc = "Royal;"; }
+                if (RibbonGorgeousRoyal) { desc = "Gorgeous Royal;"; }
+                if (RibbonArtist) { desc = "Artist;"; }
+                if (RibbonFootprint) { desc = "Footprint;"; }
+                if (RibbonRecord) { desc = "Record;"; }
+                if (RibbonLegend) { desc = "Legend;"; }
+                if (RibbonCountry) { desc = "Country;"; }
+                if (RibbonNational) { desc = "National;"; }
+                if (RibbonEarth) { desc = "Earth;"; }
+                if (RibbonWorld) { desc = "World;"; }
+                if (RibbonClassic) { desc = "Classic;"; }
+                if (RibbonPremier) { desc = "Premier;"; }
+                if (RibbonEvent) { desc = "Event;"; }
+                if (RibbonBirthday) { desc = "Birthday;"; }
+                if (RibbonSpecial) { desc = "Special;"; }
+                if (RibbonSouvenir) { desc = "Souvenir;"; }
+                if (RibbonWishing) { desc = "Wishing;"; }
+                if (RibbonChampionBattle) { desc = "Battle Champ;"; }
+                if (RibbonChampionRegional) { desc = "Regional Champ;"; }
+                if (RibbonChampionNational) { desc = "National Champ;"; }
+                if (RibbonChampionWorld) { desc = "World Champ;"; }
+                if (RibbonChampionG6Hoenn) { desc = "Hoenn Champion;"; }
+                if (RibbonContestStar) { desc = "Contest Star;"; }
+                if (RibbonMasterCoolness) { desc = "Coolness Master;"; }
+                if (RibbonMasterBeauty) { desc = "Beauty Master;"; }
+                if (RibbonMasterCuteness) { desc = "Cuteness Master;"; }
+                if (RibbonMasterCleverness) { desc = "Cleverness Master;"; }
+                if (RibbonMasterToughness) { desc = "Toughness Master;"; }
+                if (RibbonCountMemoryContest > 0 && RibbonCountMemoryContest < 20) { desc = "Contest Memory Ribbon;"; }
+                if (RibbonCountMemoryContest >= 20) { desc = "Gold Contest Memory Ribbon;"; }
+                if (RibbonCountMemoryBattle > 0 && RibbonCountMemoryBattle < 8) { desc = "Battle Memory Ribbon;"; }
+                if (RibbonCountMemoryBattle >= 8) { desc = "Gold Battle Memory Ribbon;"; }
+
+                if (RibbonChampionAlola) { desc = "Alola Champion;"; }
+                if (RibbonBattleRoyale) { desc = "Battle Royale;"; }
+                if (RibbonBattleTreeGreat) { desc = "Battle Tree Great;"; }
+                if (RibbonBattleTreeMaster) { desc = "Battle Tree Master;"; }
+
+                return desc;
+            }
+        }
     }
 }
