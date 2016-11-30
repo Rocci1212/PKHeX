@@ -393,7 +393,11 @@ namespace PKHeX
             pk3.IV_SPD = newIvs[4];
             pk3.IV_SPE = newIvs[5];
 
-            pk3.RibbonWorld = true;
+            // for my own edification - R = Red, S = Crystal
+            if (Met_Location == 0)
+                pk3.Version = (int)PKHeX.GameVersion.R;
+            else
+                pk3.Version = (int)PKHeX.GameVersion.S;
 
             if (IsShiny)
                 pk3.setShinyPID();

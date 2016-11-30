@@ -292,7 +292,7 @@ namespace PKHeX
                 }
             }
 
-            //else // fromFormat > toFormat
+            //else // fromFormat > toFormat - we're going backwards, normally unsupported
             //{
             //    pkm = pk.Clone();
             //    if (pkm.IsEgg) // force hatch
@@ -323,6 +323,15 @@ namespace PKHeX
             //            else
             //                pkm = null;
             //            break;
+            //        case "PK7":
+            //            pkm = new PK6(pkm.Data, pkm.Identifier);
+            //            if (toFormat == 6)
+            //                break;
+            //            pkm = ((PK6)pkm).convertToPK5();
+            //            if (toFormat == 5)
+            //                break;
+
+            //            break;
             //        case "CK3":
             //        case "XK3":
             //            // interconverting C/XD needs to visit main series format
@@ -349,6 +358,7 @@ namespace PKHeX
             //            if (toFormat == 4)
             //                break;
             //            pkm = pkm.convertToPK3();
+            //            break;
             //    }
             //}
 
