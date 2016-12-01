@@ -292,75 +292,146 @@ namespace PKHeX
                 }
             }
 
-            //else // fromFormat > toFormat - we're going backwards, normally unsupported
-            //{
-            //    pkm = pk.Clone();
-            //    if (pkm.IsEgg) // force hatch
-            //    {
-            //        pkm.IsEgg = false;
-            //        if (pkm.AO)
-            //            pkm.Met_Location = 318; // Battle Resort
-            //        else if (pkm.XY)
-            //            pkm.Met_Location = 38; // Route 7
-            //        else if (pkm.Gen5)
-            //            pkm.Met_Location = 16; // Route 16
-            //        else
-            //            pkm.Met_Location = 30001; // Pokétransfer
-            //    }
+            else // fromFormat > toFormat - we're going backwards, normally unsupported - obviously not perfect, but its cool i guess
+            {
+                pkm = pk.Clone();
+                if (pkm.IsEgg) // force hatch
+                {
+                    pkm.IsEgg = false;
+                    if (pkm.AO)
+                        pkm.Met_Location = 318; // Battle Resort
+                    else if (pkm.XY)
+                        pkm.Met_Location = 38; // Route 7
+                    else if (pkm.Gen5)
+                        pkm.Met_Location = 16; // Route 16
+                    else
+                        pkm.Met_Location = 30001; // Pokétransfer
+                }
 
-            //    switch (fromType.Name)
-            //    {
-            //        case "PK2":
-            //            if (PKMType == typeof(PK1))
-            //            {
-            //                if (pk.Species > 151)
-            //                {
-            //                    comment = $"Cannot convert a {PKX.getSpeciesName(pkm.Species, ((PK2)pkm).Japanese ? 1 : 2)} to {PKMType.Name}";
-            //                    return null;
-            //                }
-            //                pkm = ((PK2)pk).convertToPK1();
-            //            }
-            //            else
-            //                pkm = null;
-            //            break;
-            //        case "PK7":
-            //            pkm = new PK6(pkm.Data, pkm.Identifier);
-            //            if (toFormat == 6)
-            //                break;
-            //            pkm = ((PK6)pkm).convertToPK5();
-            //            if (toFormat == 5)
-            //                break;
+                switch (fromType.Name)
+                {
+                    case "PK2":
+                        if (PKMType == typeof(PK1))
+                        {
+                            if (pk.Species > 151)
+                            {
+                                comment = $"Cannot convert a {PKX.getSpeciesName(pkm.Species, ((PK2)pkm).Japanese ? 1 : 2)} to {PKMType.Name}";
+                                return null;
+                            }
+                            pkm = ((PK2)pk).convertToPK1();
+                        }
+                        else
+                            pkm = null;
+                        break;
 
-            //            break;
-            //        case "CK3":
-            //        case "XK3":
-            //            // interconverting C/XD needs to visit main series format
-            //            // ends up stripping purification/shadow etc stats
-            //            pkm = pkm.convertToPK3();
-            //            goto case "PK3"; // fall through
-            //        case "PK3":
-            //            // todo
-            //            break;
-            //        case "PK4":
-            //            if (toFormat == 3)
-            //            {
-            //                if (pk.Species > 386)
-            //                {
-            //                    comment = $"Cannot convert a {PKX.getSpeciesName(pkm.Species, ((PK4)pkm).Language)} to {PKMType.Name}";
-            //                    return null;
-            //                }
-            //                pkm = ((PK4)pkm).convertToPK3();
-            //                break;
-            //            }
-            //            break;
-            //        case "PK5":
-            //            pkm = ((BK4)pkm).convertToPK4();
-            //            if (toFormat == 4)
-            //                break;
-            //            pkm = pkm.convertToPK3();
-            //            break;
-            //    }
-            //}
+                    case "PK7":
+                        if (
+                            (toFormat == 6 && pk.Species > 721) ||
+                            (toFormat == 5 && pk.Species > 649) ||
+                            (toFormat == 4 && pk.Species > 493) ||
+                            (toFormat == 3 && pk.Species > 386) ||
+                            (toFormat == 2 && pk.Species > 251) ||
+                            (toFormat == 1 && pk.Species > 151)
+                           )
+                        { pkm = null; break; } // how awkward im the worst
+
+                        pkm = new PK6(pkm.Data, pkm.Identifier);
+                        if (toFormat == 6)
+                            break;
+                        pkm = ((PK6)pkm).convertToPK5();
+                        if (toFormat == 5)
+                            break;
+                        pkm = ((PK5)pkm).convertToPK4();
+                        if (toFormat == 4)
+                            break;
+                        pkm = ((PK4)pkm).convertToPK3();
+                        if (toFormat == 3)
+                            break;
+                        pkm = ((PK3)pkm).convertToPK2();
+                        if (toFormat == 2)
+                            break;
+                        pkm = ((PK2)pkm).convertToPK1();
+                        break;
+
+                    case "PK6":
+                        if (
+                            (toFormat == 5 && pk.Species > 649) ||
+                            (toFormat == 4 && pk.Species > 493) ||
+                            (toFormat == 3 && pk.Species > 386) ||
+                            (toFormat == 2 && pk.Species > 251) ||
+                            (toFormat == 1 && pk.Species > 151)
+                           ) { pkm = null; break; } // how awkward im the worst
+                        
+                        pkm = ((PK6)pkm).convertToPK5();
+                        if (toFormat == 5)
+                            break;
+                        pkm = ((PK5)pkm).convertToPK4();
+                        if (toFormat == 4)
+                            break;
+                        pkm = ((PK4)pkm).convertToPK3();
+                        if (toFormat == 3)
+                            break;
+                        pkm = ((PK3)pkm).convertToPK2();
+                        if (toFormat == 2)
+                            break;
+                        pkm = ((PK2)pkm).convertToPK1();
+                        break;
+
+                    case "PK5":
+                        if (
+                            (toFormat == 4 && pk.Species > 493) ||
+                            (toFormat == 3 && pk.Species > 386) ||
+                            (toFormat == 2 && pk.Species > 251) ||
+                            (toFormat == 1 && pk.Species > 151)
+                           ) { pkm = null; break; } // how awkward im the worst
+
+                        pkm = ((PK5)pkm).convertToPK4();
+                        if (toFormat == 4)
+                            break;
+                        pkm = ((PK4)pkm).convertToPK3();
+                        if (toFormat == 3)
+                            break;
+                        pkm = ((PK3)pkm).convertToPK2();
+                        if (toFormat == 2)
+                            break;
+                        pkm = ((PK2)pkm).convertToPK1();
+                        break;
+
+                    case "PK4":
+                        if (
+                            (toFormat == 3 && pk.Species > 386) ||
+                            (toFormat == 2 && pk.Species > 251) ||
+                            (toFormat == 1 && pk.Species > 151)
+                           ) { pkm = null; break; } // how awkward im the worst
+
+                        pkm = ((PK4)pkm).convertToPK3();
+                        if (toFormat == 3)
+                            break;
+                        pkm = ((PK3)pkm).convertToPK2();
+                        if (toFormat == 2)
+                            break;
+                        pkm = ((PK2)pkm).convertToPK1();
+                        break;
+
+                    case "CK3":
+                    case "XK3":
+                        // interconverting C/XD needs to visit main series format
+                        // ends up stripping purification/shadow etc stats
+                        pkm = pkm.convertToPK3();
+                        goto case "PK3"; // fall through
+                    case "PK3":
+                        if (
+                            (toFormat == 2 && pk.Species > 251) ||
+                            (toFormat == 1 && pk.Species > 151)
+                           ) { pkm = null; break; } // how awkward im the worst
+
+                        pkm = ((PK3)pkm).convertToPK2();
+                        if (toFormat == 2)
+                            break;
+                        pkm = ((PK2)pkm).convertToPK1();
+                        break;
+                }
+            }
 
             comment = pkm == null
                 ? $"Cannot convert a {fromType.Name} to a {PKMType.Name}." 
