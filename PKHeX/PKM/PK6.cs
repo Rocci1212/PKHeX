@@ -637,8 +637,16 @@ namespace PKHeX
 
         public PK5 convertToPK5()
         {
-            // todo
-            return new PK5();
+            PK5 pk5 = new PK5();
+            TransferPropertiesWithReflection(this, pk5);
+            
+            // Fix PP
+            pk5.Move1_PP = pk5.getMovePP(pk5.Move1, pk5.Move1_PPUps);
+            pk5.Move2_PP = pk5.getMovePP(pk5.Move2, pk5.Move2_PPUps);
+            pk5.Move3_PP = pk5.getMovePP(pk5.Move3, pk5.Move3_PPUps);
+            pk5.Move4_PP = pk5.getMovePP(pk5.Move4, pk5.Move4_PPUps);
+
+            return pk5;
         }
 
         public override string RibbonDescription
