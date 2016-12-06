@@ -39,7 +39,8 @@ namespace PKHeX
         Ribbon,
         Training,
         Ability,
-        Evolution
+        Evolution,
+        Special
     }
     public class CheckResult
     {
@@ -713,6 +714,12 @@ namespace PKHeX
                             return;
                         }
                     }
+                    if (Legal.Ban_NoHidden7.Contains(pkm.Species) && pkm.AbilityNumber == 4)
+                    {
+                        AddLine(Severity.Invalid, "Hidden Ability not available.", CheckIdentifier.Ability);
+                        return;
+                    }
+
                 }
             }
 
@@ -927,6 +934,15 @@ namespace PKHeX
         private void verifyEggBallGen7()
         {
             var Lineage = Legal.getLineage(pkm).ToArray();
+            if (722 <= pkm.Species && pkm.Species <= 730) // G7 Starters
+            {
+                if (pkm.Ball == 4)
+                    AddLine(Severity.Valid, "Ball possible.", CheckIdentifier.Ball);
+                else
+                    AddLine(Severity.Invalid, "Only Poké Ball possible.", CheckIdentifier.Ball);
+                return;
+            }
+
             if (pkm.Ball == 0x05) // Safari Ball
             {
                 if (Lineage.Any(e => Legal.Inherit_Safari.Contains(e)))
@@ -1057,10 +1073,41 @@ namespace PKHeX
                 if (pkm.CurrentHandler != 1)
                     return new CheckResult(Severity.Invalid, "Current handler should not be Event OT.", CheckIdentifier.History);
             }
-            if (pkm.Format == 7)
+            if (pkm.GenNumber >= 7)
             {
-                // TODO
-                return new CheckResult(Severity.Valid, "S/M History Block check skipped.", CheckIdentifier.History);
+                var geo = new[]
+                {
+                    pkm.Geo1_Country, pkm.Geo2_Country, pkm.Geo3_Country, pkm.Geo4_Country, pkm.Geo5_Country,
+                    pkm.Geo1_Region, pkm.Geo2_Region, pkm.Geo3_Region, pkm.Geo4_Region, pkm.Geo5_Region,
+                };
+                if (geo.Any(d => d != 0))
+                    return new CheckResult(Severity.Invalid, "Geolocation Memories should not be present.", CheckIdentifier.History);
+                
+                if (pkm.XY && pkm.CNTs.Any(stat => stat > 0))
+                    return new CheckResult(Severity.Invalid, "Untraded -- Contest stats on SM origin should be zero.", CheckIdentifier.History);
+                
+                if (!pkm.WasEvent && pkm.HT_Name.Length == 0) // Is not Traded
+                {
+                    if (pkm.CurrentHandler != 0) // Badly edited; PKHeX doesn't trip this.
+                        return new CheckResult(Severity.Invalid, "Untraded -- Current handler should not be the Handling Trainer.", CheckIdentifier.History);
+                    if (pkm.HT_Friendship != 0)
+                        return new CheckResult(Severity.Invalid, "Untraded -- Handling Trainer Friendship should be zero.", CheckIdentifier.History);
+                    if (pkm.HT_Affection != 0)
+                        return new CheckResult(Severity.Invalid, "Untraded -- Handling Trainer Affection should be zero.", CheckIdentifier.History);
+
+                    // We know it is untraded (HT is empty), if it must be trade evolved flag it.
+                    if (Legal.getHasTradeEvolved(pkm) && (EncounterMatch as EncounterSlot[])?.Any(slot => slot.Species == pkm.Species) != true)
+                    {
+                        if (pkm.Species != 350) // Milotic
+                            return new CheckResult(Severity.Invalid, "Untraded -- requires a trade evolution.", CheckIdentifier.History);
+                        if (pkm.CNT_Beauty < 170) // Beauty Contest Stat Requirement
+                            return new CheckResult(Severity.Invalid, "Untraded -- Beauty is not high enough for Levelup Evolution.", CheckIdentifier.History);
+                        if (pkm.CurrentLevel == 1)
+                            return new CheckResult(Severity.Invalid, "Untraded -- Beauty is high enough but still Level 1.", CheckIdentifier.History);
+                    }
+                }
+
+                return new CheckResult(Severity.Valid, "S/M History Block valid.", CheckIdentifier.History);
             }
             if (!pkm.WasEvent && !(pkm.WasLink && (EncounterMatch as EncounterLink)?.OT == false) && (pkm.HT_Name.Length == 0 || pkm.Geo1_Country == 0)) // Is not Traded
             {
@@ -1502,6 +1549,61 @@ namespace PKHeX
                     }
                     break;
             }
+        }
+        private void verifyG7PreBank()
+        {
+            // Checks only performed before Bank is released
+
+            if (pkm.GenNumber < 7)
+            {
+                AddLine(Severity.Invalid, "No official transfer method is possible prior to Bank Release.", CheckIdentifier.Special);
+                return;
+            }
+
+            var Lineage = Legal.getLineage(pkm).ToArray();
+            if (Lineage.Any(e => Legal.Fossils.Contains(e)) || new[] {137,233,474}.Contains(pkm.Species)) // Only Poké Ball possible (fossils/porygon)
+            {
+                if (pkm.Ball == 4)
+                    AddLine(Severity.Valid, "Ball possible.", CheckIdentifier.Ball);
+                else
+                    AddLine(Severity.Invalid, "Only Poké Ball possible.", CheckIdentifier.Ball);
+            }
+
+            if (pkm.Species == 235) // Smeargle
+                if (pkm.Moves.Any(move => Legal.Bank_Sketch7.Contains(move)))
+                    AddLine(Severity.Invalid, "Sketched move not possible prior to Bank Release.", CheckIdentifier.Special);
+
+            int baseSpecies = Legal.getBaseSpecies(pkm);
+            var info = Legal.Bank_Egg7.FirstOrDefault(entry => entry.Species == baseSpecies && (entry.Form == 0 || entry.Form == pkm.AltForm)); // Grimer form edge case
+            if (info != null)
+            {
+                int[] moves = pkm.RelearnMoves.Intersect(info.Relearn).ToArray();
+                if (moves.Any())
+                {
+                    foreach (int m in moves)
+                        vRelearn[Array.IndexOf(pkm.RelearnMoves, m)] = new CheckResult(Severity.Invalid, "Egg move not possible prior to Bank Release.", CheckIdentifier.RelearnMove);
+                }
+            }
+
+            if (Legal.Bank_NotAvailable7.Contains(baseSpecies) && !EncounterIsMysteryGift)
+                AddLine(Severity.Invalid, "Species not obtainable prior to Bank Release.", CheckIdentifier.Special);
+
+            if (Legal.EvolveToAlolanForms.Contains(pkm.Species))
+            {
+                if (pkm.Species == 25)
+                {
+                    if (pkm.AltForm != 0)
+                        AddLine(Severity.Invalid, "Form not obtainable.", CheckIdentifier.Special);
+                }
+                else if (pkm.AltForm != 1)
+                    AddLine(Severity.Invalid, "Form not obtainable prior to Bank Release.", CheckIdentifier.Special);
+            }
+
+            if (new[] {422,423}.Contains(pkm.Species) && pkm.AltForm != 1) // East Sea only
+                AddLine(Severity.Invalid, "Form not obtainable prior to Bank Release.", CheckIdentifier.Special);
+
+            if (Legal.Bank_NoHidden7.Contains(pkm.Species) && pkm.AbilityNumber == 4)
+                AddLine(Severity.Invalid, "Ability not obtainable prior to Bank Release.", CheckIdentifier.Special);
         }
 
         private CheckResult[] verifyMoves()

@@ -136,6 +136,7 @@ namespace PKHeX
             HaX = filename?.IndexOf("hax", StringComparison.Ordinal) >= 0;
 
             bool showChangelog = false;
+            bool BAKprompt = false;
             // Load User Settings
             {
                 unicode = Menu_Unicode.Checked = Properties.Settings.Default.Unicode;
@@ -157,6 +158,11 @@ namespace PKHeX
 
                     showChangelog = lastrev < currrev;
                 }
+
+                // BAK Prompt
+                if (!Properties.Settings.Default.BAKPrompt)
+                    BAKprompt = Properties.Settings.Default.BAKPrompt = true;
+
                 Properties.Settings.Default.Version = Properties.Resources.ProgramVersion;
                 Properties.Settings.Default.Save();
             }
@@ -202,6 +208,10 @@ namespace PKHeX
             
             if (showChangelog)
                 new About().ShowDialog();
+
+            if (BAKprompt && !Directory.Exists(BackupPath))
+                promptBackup();
+
             #endregion
         }
 
@@ -244,7 +254,7 @@ namespace PKHeX
         public static string DatabasePath => Path.Combine(WorkingDirectory, "pkmdb");
         public static string MGDatabasePath => Path.Combine(WorkingDirectory, "mgdb");
         private static string BackupPath => Path.Combine(WorkingDirectory, "bak");
-        private static string ThreadPath => @"https://projectpokemon.org/forums/showthread.php?36986";
+        private static string ThreadPath => @"https://projectpokemon.org/pkhex/";
         private static string VersionPath => @"https://raw.githubusercontent.com/kwsch/PKHeX/master/PKHeX/Resources/text/version.txt";
 
         #endregion
@@ -947,6 +957,7 @@ namespace PKHeX
                 B_OpenSecretBase.Enabled = SAV.HasSecretBase;
                 B_OpenPokepuffs.Enabled = SAV.HasPuff;
                 B_OpenPokeBeans.Enabled = SAV.Generation == 7;
+                B_OpenZygardeCells.Enabled = SAV.Generation == 7;
                 B_OUTPasserby.Enabled = SAV.HasPSS;
                 B_OpenBoxLayout.Enabled = SAV.HasBoxWallpapers;
                 B_OpenWondercards.Enabled = SAV.HasWondercards;
@@ -1991,7 +2002,7 @@ namespace PKHeX
             changingFields = false;
 
             // Potential Reading
-            L_Potential.Text = (!unicode
+            L_Potential.Text = (unicode
                 ? new[] {"★☆☆☆", "★★☆☆", "★★★☆", "★★★★"}
                 : new[] {"+", "++", "+++", "++++"}
                 )[pkm.PotentialRating];
@@ -2970,7 +2981,8 @@ namespace PKHeX
             // Create Temp File to Drag
             PKM pkx = preparePKM();
             bool encrypt = ModifierKeys == Keys.Control;
-            string filename = $"{Path.GetFileNameWithoutExtension(pkx.FileName)}{(encrypt ? ".ek" + pkx.Format : "."+pkx.Extension) }";
+            string fn = pkx.FileName; fn = fn.Substring(0, fn.LastIndexOf('.'));
+            string filename = $"{fn}{(encrypt ? ".ek" + pkx.Format : "." + pkx.Extension)}";
             byte[] dragdata = encrypt ? pkx.EncryptedBoxData : pkx.DecryptedBoxData;
             // Make file
             string newfile = Path.Combine(Path.GetTempPath(), Util.CleanFileName(filename));
@@ -3042,10 +3054,14 @@ namespace PKHeX
             File.WriteAllBytes(path, SAV.BAK);
             Util.Alert("Saved Backup of current SAV to:", path);
 
-            if (Directory.Exists(BackupPath)) return;
+            if (!Directory.Exists(BackupPath))
+                promptBackup();
+        }
+        private static void promptBackup()
+        {
             if (DialogResult.Yes != Util.Prompt(MessageBoxButtons.YesNo,
                 $"PKHeX can perform automatic backups if you create a folder with the name \"{BackupPath}\" in the same folder as PKHeX's executable.",
-                "Would you like to create the backup folder now and save backup of current save?")) return;
+                "Would you like to create the backup folder now?")) return;
 
             try { Directory.CreateDirectory(BackupPath); Util.Alert("Backup folder created!", 
                 $"If you wish to no longer automatically back up save files, delete the \"{BackupPath}\" folder."); }
@@ -3972,6 +3988,10 @@ namespace PKHeX
         {
             new SAV_SecretBase().ShowDialog();
         }
+        private void B_OpenZygardeCells_Click(object sender, EventArgs e)
+        {
+            new SAV_ZygardeCell().ShowDialog();
+        }
         private void B_LinkInfo_Click(object sender, EventArgs e)
         {
             new SAV_Link6().ShowDialog();
@@ -4055,7 +4075,8 @@ namespace PKHeX
                 byte[] dragdata = SAV.decryptPKM(DragInfo.slotPkmSource);
                 Array.Resize(ref dragdata, SAV.SIZE_STORED);
                 PKM pkx = SAV.getPKM(dragdata);
-                string filename = $"{Path.GetFileNameWithoutExtension(pkx.FileName)}{(encrypt ? ".ek" + pkx.Format : "." + pkx.Extension) }";
+                string fn = pkx.FileName; fn = fn.Substring(0, fn.LastIndexOf('.'));
+                string filename = $"{fn}{(encrypt ? ".ek" + pkx.Format : "." + pkx.Extension)}";
 
                 // Make File
                 string newfile = Path.Combine(Path.GetTempPath(), Util.CleanFileName(filename));
