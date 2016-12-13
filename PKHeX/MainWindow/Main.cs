@@ -1159,8 +1159,9 @@ namespace PKHeX
                     getFieldsfromPKM = populateFieldsPK6;
                     getPKMfromFields = preparePK6;
                     extraBytes = PK6.ExtraBytes;
-                    TB_GameSync.Enabled = (SAV.GameSyncID ?? 0) != 0;
-                    TB_GameSync.Text = SAV.GameSyncID?.ToString("X16");
+                    TB_GameSync.Enabled = SAV.GameSyncID != null;
+                    TB_GameSync.MaxLength = SAV.GameSyncIDSize;
+                    TB_GameSync.Text = (SAV.GameSyncID ?? 0.ToString()).PadLeft(SAV.GameSyncIDSize, '0');
                     TB_Secure1.Text = SAV.Secure1?.ToString("X16");
                     TB_Secure2.Text = SAV.Secure2?.ToString("X16");
                     break;
@@ -1168,8 +1169,9 @@ namespace PKHeX
                     getFieldsfromPKM = populateFieldsPK7;
                     getPKMfromFields = preparePK7;
                     extraBytes = PK7.ExtraBytes;
-                    TB_GameSync.Enabled = (SAV.GameSyncID ?? 0) != 0;
-                    TB_GameSync.Text = SAV.GameSyncID?.ToString("X16");
+                    TB_GameSync.Enabled = SAV.GameSyncID != null;
+                    TB_GameSync.MaxLength = SAV.GameSyncIDSize;
+                    TB_GameSync.Text = (SAV.GameSyncID ?? 0.ToString()).PadLeft(SAV.GameSyncIDSize, '0');
                     TB_Secure1.Text = SAV.Secure1?.ToString("X16");
                     TB_Secure2.Text = SAV.Secure2?.ToString("X16");
                     break;
@@ -1426,18 +1428,18 @@ namespace PKHeX
             updatePKRSInfected(null, null);
             updatePKRSCured(null, null);
 
-            if (HaX)
+            if (HaX) // Load original values from pk not pkm
             {
-                MT_Level.Text = pkm.Stat_Level.ToString();
-                MT_Form.Text = pkm.AltForm.ToString();
-                if (pkm.Stat_HPMax != 0) // stats present
+                MT_Level.Text = pk.Stat_Level.ToString();
+                MT_Form.Text = pk.AltForm.ToString();
+                if (pk.Stat_HPMax != 0) // stats present
                 {
-                    Stat_HP.Text = pkm.Stat_HPCurrent.ToString();
-                    Stat_ATK.Text = pkm.Stat_ATK.ToString();
-                    Stat_DEF.Text = pkm.Stat_DEF.ToString();
-                    Stat_SPA.Text = pkm.Stat_SPA.ToString();
-                    Stat_SPD.Text = pkm.Stat_SPD.ToString();
-                    Stat_SPE.Text = pkm.Stat_SPE.ToString();
+                    Stat_HP.Text = pk.Stat_HPCurrent.ToString();
+                    Stat_ATK.Text = pk.Stat_ATK.ToString();
+                    Stat_DEF.Text = pk.Stat_DEF.ToString();
+                    Stat_SPA.Text = pk.Stat_SPA.ToString();
+                    Stat_SPD.Text = pk.Stat_SPD.ToString();
+                    Stat_SPE.Text = pk.Stat_SPE.ToString();
                 }
             }
             fieldsLoaded = true;
@@ -3435,7 +3437,36 @@ namespace PKHeX
             {
                 SAV.setDaycareRNGSeed(SAV.DaycareIndex, value);
                 SAV.Edited = true;
-            }            
+            }
+        }
+        private void updateGameSyncID(object sender, EventArgs e)
+        {
+            TextBox tb = TB_GameSync;
+            if (tb.Text.Length == 0)
+            {
+                // Reset to 0
+                tb.Text = 0.ToString("X" + SAV.GameSyncIDSize);
+                return; // recursively triggers this method, no need to continue
+            }
+
+            string filterText = Util.getOnlyHex(tb.Text);
+            if (filterText.Length != tb.Text.Length)
+            {
+                Util.Alert("Expected HEX (0-9, A-F).", "Received: " + Environment.NewLine + tb.Text);
+                // Reset to Stored Value
+                var seed = SAV.GameSyncID;
+                if (seed != null)
+                    tb.Text = seed;
+                return; // recursively triggers this method, no need to continue
+            }
+
+            // Write final value back to the save
+            var value = filterText.PadLeft(SAV.GameSyncIDSize, '0');
+            if (value != SAV.GameSyncID)
+            {
+                SAV.GameSyncID = value;
+                SAV.Edited = true;
+            }
         }
         private void updateU64(object sender, EventArgs e)
         {
@@ -3454,9 +3485,7 @@ namespace PKHeX
             ulong? oldval = 0;
             if (SAV.Generation == 6)
             {
-                if (tb == TB_GameSync)
-                    oldval = SAV.GameSyncID;
-                else if (tb == TB_Secure1)
+                if (tb == TB_Secure1)
                     oldval = SAV.Secure1;
                 else if (tb == TB_Secure2)
                     oldval = SAV.Secure2;
@@ -3478,9 +3507,7 @@ namespace PKHeX
 
             if (SAV.Generation >= 6)
             {
-                if (tb == TB_GameSync)
-                    SAV.GameSyncID = newval;
-                else if (tb == TB_Secure1)
+                if (tb == TB_Secure1)
                     SAV.Secure1 = newval;
                 else if (tb == TB_Secure2)
                     SAV.Secure2 = newval;
@@ -4272,7 +4299,7 @@ namespace PKHeX
 
             public static bool? WasDragParticipant(object form, int index)
             {
-                if (slotDestinationBoxNumber != index)
+                if (slotDestinationBoxNumber != index && slotSourceBoxNumber != index)
                     return null; // form was not watching box
                 return slotSource == form || slotDestination == form; // form already updated?
             }

@@ -12,7 +12,7 @@ namespace PKHeX
             InitializeComponent();
             Util.TranslateInterface(this, Main.curlanguage);
             if (SAV.Generation <= 3)
-                B_GiveAll.Visible = false;
+                NUD_Count.Visible = L_Count.Visible = B_GiveAll.Visible = false;
             itemlist = Main.GameStrings.getItemStrings(SAV.Generation, SAV.Version);
 
             for (int i = 0; i < itemlist.Length; i++)
@@ -153,18 +153,15 @@ namespace PKHeX
                 var invalid = pouch.Items.Where(item => item.Index != 0 && !pouch.LegalItems.Contains((ushort)item.Index)).ToArray();
                 var outOfBounds = invalid.Where(item => item.Index >= itemlist.Length).ToArray();
                 var incorrectPouch = invalid.Where(item => item.Index < itemlist.Length).ToArray();
-                pouch.Items = pouch.Items.Where(item => item.Index == 0 || pouch.LegalItems.Contains((ushort)item.Index)).ToArray();
 
                 if (outOfBounds.Any())
                     Util.Error("Unknown item detected.", "Item ID(s): " + string.Join(", ", outOfBounds.Select(item => item.Index)));
-                if (incorrectPouch.Any())
+                if (!Main.HaX && incorrectPouch.Any())
                     Util.Alert($"The following item(s) have been removed from {pouch.Type} pouch.",
                         string.Join(", ", incorrectPouch.Select(item => itemlist[item.Index])), 
                         "If you save changes, the item(s) will no longer be in the pouch.");
 
-                int purgedItems = outOfBounds.Length + incorrectPouch.Length;
-                pouch.Items = pouch.Items.Concat(new byte[purgedItems].Select(i => new InventoryItem())).ToArray();
-
+                pouch.sanitizePouch(Main.HaX, itemlist.Length - 1);
                 getBag(dgv, pouch);
             }
         }
@@ -212,7 +209,12 @@ namespace PKHeX
                         itemcnt = ushort.MaxValue;
                 }
                 else if (itemcnt > pouch.MaxCount)
-                    itemcnt = pouch.MaxCount; // Cap at pouch maximum
+                {
+                    if (itemindex == 797 && itemcnt >= 2) // Edge case when for some reason the item count for Z-Ring was 2 in an unedited save and set 1 after using PKHex
+                        itemcnt = 2;
+                    else
+                        itemcnt = pouch.MaxCount; // Cap at pouch maximum
+                }   
                 else if (itemcnt <= 0)
                     continue; // ignore item
 

@@ -439,9 +439,6 @@ namespace PKHeX
                         if (wc.OTGender != pkm.OT_Gender) continue;
                     }
                     if (!string.IsNullOrEmpty(wc.OT) && wc.OT != pkm.OT_Name) continue;
-                    if (wc.PIDType == 0 && pkm.PID != wc.PID) continue;
-                    if (wc.PIDType == 2 && !pkm.IsShiny) continue;
-                    if (wc.PIDType == 3 && pkm.IsShiny) continue;
                     if (wc.OriginGame != 0 && wc.OriginGame != pkm.Version) continue;
                     if (wc.EncryptionConstant != 0 && wc.EncryptionConstant != pkm.EncryptionConstant) continue;
                     if (wc.Language != 0 && wc.Language != pkm.Language) continue;
@@ -461,6 +458,17 @@ namespace PKHeX
                 if (wc.CNT_Smart > pkm.CNT_Smart) continue;
                 if (wc.CNT_Tough > pkm.CNT_Tough) continue;
                 if (wc.CNT_Sheen > pkm.CNT_Sheen) continue;
+
+                if (wc.PIDType == 2 && !pkm.IsShiny) continue;
+                if (wc.PIDType == 3 && pkm.IsShiny) continue;
+                
+                if ((pkm.SID << 16 | pkm.TID) == 0x79F57B49) // Greninja WC has variant PID and can arrive @ 36 or 37
+                {
+                    if (!pkm.IsShiny)
+                        validWC7.Add(wc);
+                    continue;
+                }
+                if (wc.PIDType == 0 && pkm.PID != wc.PID) continue;
 
                 // Some checks are best performed separately as they are caused by users screwing up valid data.
                 // if (!wc.RelearnMoves.SequenceEqual(pkm.RelearnMoves)) continue; // Defer to relearn legality
@@ -533,7 +541,7 @@ namespace PKHeX
         internal static bool getEvolutionValid(PKM pkm)
         {
             var curr = getValidPreEvolutions(pkm);
-            var poss = getValidPreEvolutions(pkm, 100);
+            var poss = getValidPreEvolutions(pkm, 100, skipChecks: true);
 
             if (SplitBreed.Contains(getBaseSpecies(pkm, 1)))
                 return curr.Count() >= poss.Count() - 1;
@@ -793,7 +801,7 @@ namespace PKHeX
             }
             return slotLocations;
         }
-        private static IEnumerable<DexLevel> getValidPreEvolutions(PKM pkm, int lvl = -1)
+        private static IEnumerable<DexLevel> getValidPreEvolutions(PKM pkm, int lvl = -1, bool skipChecks = false)
         {
             if (lvl < 0)
                 lvl = pkm.CurrentLevel;
@@ -805,7 +813,7 @@ namespace PKHeX
                 };
 
             var et = getEvolutionTable(pkm);
-            return et.getValidPreEvolutions(pkm, lvl);
+            return et.getValidPreEvolutions(pkm, lvl, skipChecks: skipChecks);
         }
         private static IEnumerable<EncounterStatic> getStatic(PKM pkm, IEnumerable<EncounterStatic> table, int lvl = -1)
         {
