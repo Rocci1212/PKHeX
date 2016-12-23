@@ -115,8 +115,16 @@ namespace PKHeX
             MT_Minutes.Text = SAV.PlayedMinutes.ToString();
             MT_Seconds.Text = SAV.PlayedSeconds.ToString();
             
-            CAL_LastSavedDate.Value = new DateTime(SAV.LastSavedYear, SAV.LastSavedMonth, SAV.LastSavedDay);
-            CAL_LastSavedTime.Value = new DateTime(2000, 1, 1, SAV.LastSavedHour, SAV.LastSavedMinute, 0);
+            if (SAV.LastSavedDate.HasValue)
+            {
+                CAL_LastSavedDate.Value = SAV.LastSavedDate.Value;
+                CAL_LastSavedTime.Value = SAV.LastSavedDate.Value;
+            }
+            else
+            {
+                L_LastSaved.Visible = CAL_LastSavedDate.Visible = CAL_LastSavedTime.Visible = false;
+            }
+                
             CAL_AdventureStartDate.Value = new DateTime(2000, 1, 1).AddSeconds(SAV.SecondsToStart);
             CAL_AdventureStartTime.Value = new DateTime(2000, 1, 1).AddSeconds(SAV.SecondsToStart % 86400);
             CAL_HoFDate.Value = new DateTime(2000, 1, 1).AddSeconds(SAV.SecondsToFame);
@@ -125,7 +133,7 @@ namespace PKHeX
             NUD_BP.Value = Math.Min(NUD_BP.Maximum, SAV.BP);
             NUD_FC.Value = Math.Min(NUD_FC.Maximum, SAV.FestaCoins);
 
-            // Poké Finder
+            // PokÃ© Finder
             NUD_SnapCount.Value = Math.Min(NUD_SnapCount.Maximum, SAV.PokeFinderSnapCount);
             NUD_ThumbsTotal.Value = Math.Min(NUD_SnapCount.Maximum, SAV.PokeFinderThumbsTotalValue);
             NUD_ThumbsRecord.Value = Math.Min(NUD_SnapCount.Maximum, SAV.PokeFinderThumbsHighValue);
@@ -189,16 +197,13 @@ namespace PKHeX
             fame += (int)(CAL_HoFTime.Value - new DateTime(2000, 1, 1)).TotalSeconds;
             SAV.SecondsToFame = fame;
 
-            SAV.LastSavedYear = CAL_LastSavedDate.Value.Year;
-            SAV.LastSavedMonth = CAL_LastSavedDate.Value.Month;
-            SAV.LastSavedDay = CAL_LastSavedDate.Value.Day;
-            SAV.LastSavedHour = CAL_LastSavedTime.Value.Hour;
-            SAV.LastSavedMinute = CAL_LastSavedTime.Value.Minute;
+            if (SAV.LastSavedDate.HasValue)
+                SAV.LastSavedDate = new DateTime(CAL_LastSavedDate.Value.Year, CAL_LastSavedDate.Value.Month, CAL_LastSavedDate.Value.Day, CAL_LastSavedTime.Value.Hour, CAL_LastSavedTime.Value.Minute, 0);
 
             SAV.BP = (uint)NUD_BP.Value;
             SAV.FestaCoins = (uint)NUD_FC.Value;
 
-            // Poké Finder
+            // PokÃ© Finder
             SAV.PokeFinderSnapCount = (uint)NUD_SnapCount.Value;
             SAV.PokeFinderThumbsTotalValue = (uint)NUD_ThumbsTotal.Value;
             SAV.PokeFinderThumbsHighValue = (uint)NUD_ThumbsRecord.Value;
@@ -242,8 +247,8 @@ namespace PKHeX
             string IDstr = "TSV: " + tsv.ToString("0000");
             if (SAV.Generation > 6) // always true for G7
                 IDstr += Environment.NewLine + "G7TID: " + SAV.TrainerID7.ToString("000000");
-            Tip1.SetToolTip(MT_TID, "TSV: " + IDstr);
-            Tip2.SetToolTip(MT_SID, "TSV: " + IDstr);
+            Tip1.SetToolTip(MT_TID, IDstr);
+            Tip2.SetToolTip(MT_SID, IDstr);
         }
 
         private void B_Cancel_Click(object sender, EventArgs e)
