@@ -302,7 +302,7 @@ namespace PKHeX
         {
             get
             {
-                string form = AltForm > 0 ? $"-{AltForm:00)}" : "";
+                string form = AltForm > 0 ? $"-{AltForm:00}" : "";
                 string star = IsShiny ? " ★" : "";
                 return $"{Species:000}{form}{star} - {Nickname} - {Checksum:X4}{EncryptionConstant:X8}.{Extension}";
             }
