@@ -218,7 +218,7 @@ namespace PKHeX
             };
         private static GameVersion origintrack;
         private readonly PictureBox[] SlotPictureBoxes, movePB, relearnPB;
-        private readonly ToolTip Tip1 = new ToolTip(), Tip2 = new ToolTip(), Tip3 = new ToolTip(), NatureTip = new ToolTip();
+        private readonly ToolTip Tip1 = new ToolTip(), Tip2 = new ToolTip(), Tip3 = new ToolTip(), NatureTip = new ToolTip(), EVTip = new ToolTip();
         #endregion
 
         #region Path Variables
@@ -270,37 +270,23 @@ namespace PKHeX
             string pkx = pkm.Extension;
             string ekx = 'e' + pkx.Substring(1, pkx.Length-1);
 
-            string supported = "*.pkm;";
-            for (int i = 3; i <= SAV.Generation; i++)
-            {
-                supported += $"*.pk{i}";
-                if (i != pkm.Format)
-                    supported += ";";
-            }
-
+            string supported = string.Join(";", SAV.PKMExtensions.Select(s => "*."+s).Concat(new[] {"*.pkm"}));
             OpenFileDialog ofd = new OpenFileDialog
             {
-                Filter = $"Decrypted PKM File|{supported}" +
+                Filter = $"Supported Files|main;*.sav;*.bin;*.{ekx};{supported};*.bak" +
+                         $"|3DS Main Files|main" +
+                         $"|Save Files|*.sav" +
+                         $"|Decrypted PKM File|{supported}" +
                          $"|Encrypted PKM File|*.{ekx}" +
                          "|Binary File|*.bin" +
-                         "|All Files|*.*",
-                RestoreDirectory = true,
-                FilterIndex = 4,
-                FileName = "main",
-            };
-
-            // Reset file dialog path if it no longer exists
-            if (!Directory.Exists(ofd.InitialDirectory))
-                ofd.InitialDirectory = WorkingDirectory;
+                         "|Backup File|*.bak" +
+                         "|All Files|*.*"
+            };             
 
             // Detect main
             string path = SaveUtil.detectSaveFile();
             if (path != null)
-            { ofd.InitialDirectory = Path.GetDirectoryName(path); }
-            else if (File.Exists(Path.Combine(ofd.InitialDirectory, "main")))
-            { }
-            else if (!Directory.Exists(ofd.InitialDirectory))
-            { ofd.RestoreDirectory = false; ofd.FilterIndex = 1; ofd.FileName = ""; }
+            { ofd.FileName = path; }
 
             if (ofd.ShowDialog() == DialogResult.OK) 
                 openQuick(ofd.FileName);
@@ -327,8 +313,12 @@ namespace PKHeX
             if (File.Exists(path))
             {
                 // File already exists, save a .bak
-                byte[] backupfile = File.ReadAllBytes(path);
-                File.WriteAllBytes(path + ".bak", backupfile);
+                string bakpath = path + ".bak";
+                if (!File.Exists(bakpath))
+                {
+                    byte[] backupfile = File.ReadAllBytes(path);
+                    File.WriteAllBytes(bakpath, backupfile);
+                }
             }
 
             if (new[] {".ekx", "."+ekx, ".bin"}.Contains(ext))
@@ -899,13 +889,14 @@ namespace PKHeX
             populateFields(SAV.BlankPKM);
             SAV = sav;
 
+            string title = $"PKH{(HaX ? "a" : "e")}X ({Properties.Resources.ProgramVersion}) - " + $"SAV{SAV.Generation}: ";
             if (path != null) // Actual save file
             {
                 SAV.FilePath = Path.GetDirectoryName(path);
                 SAV.FileName = Path.GetExtension(path) == ".bak"
                     ? Path.GetFileName(path).Split(new[] { " [" }, StringSplitOptions.None)[0]
                     : Path.GetFileName(path);
-                Text = $"PKH{(HaX ? "a" : "e")}X - " + $"SAV{SAV.Generation}: {Path.GetFileNameWithoutExtension(Util.CleanFileName(SAV.BAKName))}"; // more descriptive
+                Text = title + $"{Path.GetFileNameWithoutExtension(Util.CleanFileName(SAV.BAKName))}"; // more descriptive
 
                 // If backup folder exists, save a backup.
                 string backupName = Path.Combine(BackupPath, Util.CleanFileName(SAV.BAKName));
@@ -918,7 +909,7 @@ namespace PKHeX
             {
                 SAV.FilePath = null;
                 SAV.FileName = "Blank Save File";
-                Text = $"PKH{(HaX ? "a" : "e")}X - " + $"SAV{SAV.Generation}: {SAV.FileName} [{SAV.OT} ({SAV.Version})]";
+                Text = title + $"{SAV.FileName} [{SAV.OT} ({SAV.Version})]";
 
                 GB_SAVtools.Visible = false;
             }
@@ -1004,7 +995,7 @@ namespace PKHeX
                 B_OpenLinkInfo.Enabled = SAV.HasLink;
                 B_CGearSkin.Enabled = SAV.Generation == 5;
 
-                B_OpenTrainerInfo.Visible = B_OpenItemPouch.Visible = SAV.HasParty; // Box RS
+                B_OpenTrainerInfo.Enabled = B_OpenItemPouch.Enabled = SAV.HasParty; // Box RS
             }
             GB_SAVtools.Visible = FLP_SAVtools.Controls.Cast<Control>().Any(c => c.Enabled);
             foreach (Control c in FLP_SAVtools.Controls.Cast<Control>())
@@ -1052,7 +1043,6 @@ namespace PKHeX
             if (SAV.Version == GameVersion.BATREV)
             {
                 L_SaveSlot.Visible = CB_SaveSlot.Visible = true;
-                CB_SaveSlot.Items.Clear();
                 CB_SaveSlot.DisplayMember = "Text"; CB_SaveSlot.ValueMember = "Value";
                 CB_SaveSlot.DataSource = new BindingSource(((SAV4BR) SAV).SaveSlots.Select(i => new ComboItem
                 {
@@ -1869,6 +1859,12 @@ namespace PKHeX
             else if (sender == GB_RelearnMoves)
             {
                 int[] m = Legality.getSuggestedRelearn();
+                if (!pkm.WasEgg && !pkm.WasEvent && !pkm.WasEventEgg && !pkm.WasLink)
+                {
+                    var encounter = Legality.getSuggestedMetInfo();
+                    if (encounter != null)
+                        m = encounter.Relearn;
+                }
 
                 if (pkm.RelearnMoves.SequenceEqual(m))
                     return;
@@ -2080,6 +2076,7 @@ namespace PKHeX
             else TB_EVTotal.BackColor = TB_IVTotal.BackColor;
 
             TB_EVTotal.Text = evtotal.ToString();
+            EVTip.SetToolTip(TB_EVTotal, $"Remaining: {510 - evtotal}");
             changingFields = false;
             updateStats();
         }
@@ -3065,7 +3062,7 @@ namespace PKHeX
         {
             if (SAV.Edited)
             {
-                if (Util.Prompt(MessageBoxButtons.YesNo, "Any unsaved changes will be lost.  Are you sure you want to close PKHeX?") != DialogResult.Yes)
+                if (Util.Prompt(MessageBoxButtons.YesNo, "Any unsaved changes will be lost.", "Are you sure you want to close PKHeX?") != DialogResult.Yes)
                 {
                     e.Cancel = true;
                 }
@@ -3466,106 +3463,49 @@ namespace PKHeX
             ((SAV4BR)SAV).CurrentSlot = Util.getIndex(CB_SaveSlot);
             setPKXBoxes();
         }
-        private void updateEggRNGSeed(object sender, EventArgs e)
-        {
-            if (TB_RNGSeed.Text.Length == 0)
-            {
-                // Reset to 0
-                TB_RNGSeed.Text = 0.ToString("X"+SAV.DaycareSeedSize);
-                return; // recursively triggers this method, no need to continue
-            }
-
-            string filterText = Util.getOnlyHex(TB_RNGSeed.Text);
-            if (filterText.Length != TB_RNGSeed.Text.Length)
-            {
-                Util.Alert("Expected HEX (0-9, A-F).", "Received: " + Environment.NewLine + TB_RNGSeed.Text);
-                // Reset to Stored Value
-                var seed = SAV.getDaycareRNGSeed(SAV.DaycareIndex);
-                if (seed != null)
-                    TB_RNGSeed.Text = seed;
-                return; // recursively triggers this method, no need to continue
-            }
-
-            // Write final value back to the save
-            var value = filterText.PadLeft(SAV.DaycareSeedSize, '0');
-            if (value != SAV.getDaycareRNGSeed(SAV.DaycareIndex))
-            {
-                SAV.setDaycareRNGSeed(SAV.DaycareIndex, value);
-                SAV.Edited = true;
-            }
-        }
-        private void updateGameSyncID(object sender, EventArgs e)
-        {
-            TextBox tb = TB_GameSync;
-            if (tb.Text.Length == 0)
-            {
-                // Reset to 0
-                tb.Text = 0.ToString("X" + SAV.GameSyncIDSize);
-                return; // recursively triggers this method, no need to continue
-            }
-
-            string filterText = Util.getOnlyHex(tb.Text);
-            if (filterText.Length != tb.Text.Length)
-            {
-                Util.Alert("Expected HEX (0-9, A-F).", "Received: " + Environment.NewLine + tb.Text);
-                // Reset to Stored Value
-                var seed = SAV.GameSyncID;
-                if (seed != null)
-                    tb.Text = seed;
-                return; // recursively triggers this method, no need to continue
-            }
-
-            // Write final value back to the save
-            var value = filterText.PadLeft(SAV.GameSyncIDSize, '0');
-            if (value != SAV.GameSyncID)
-            {
-                SAV.GameSyncID = value;
-                SAV.Edited = true;
-            }
-        }
-        private void updateU64(object sender, EventArgs e)
+        private void updateStringSeed(object sender, EventArgs e)
         {
             if (!fieldsLoaded)
                 return;
 
             TextBox tb = sender as TextBox;
-            if (tb?.Text.Length == 0)
-            {
-                // Reset to 0
-                tb.Text = 0.ToString("X16");
-                return; // recursively triggers this method, no need to continue
-            }
+            if (tb == null)
+                return;
 
-            // Currently saved Value
-            ulong? oldval = 0;
-            if (SAV.Generation == 6)
+            if (tb.Text.Length == 0)
             {
-                if (tb == TB_Secure1)
-                    oldval = SAV.Secure1;
-                else if (tb == TB_Secure2)
-                    oldval = SAV.Secure2;
+                tb.Undo();
+                return;
             }
 
             string filterText = Util.getOnlyHex(tb.Text);
-
             if (filterText.Length != tb.Text.Length)
             {
                 Util.Alert("Expected HEX (0-9, A-F).", "Received: " + Environment.NewLine + tb.Text);
-                // Reset to Stored Value
-                tb.Text = (oldval ?? 0).ToString("X16");
-                return; // recursively triggers this method, no need to continue
+                tb.Undo();
+                return;
             }
 
             // Write final value back to the save
-            ulong? newval = Convert.ToUInt64(filterText, 16);
-            if (newval == oldval) return;
-
-            if (SAV.Generation >= 6)
+            if (tb == TB_RNGSeed)
             {
+                var value = filterText.PadLeft(SAV.DaycareSeedSize, '0');
+                SAV.setDaycareRNGSeed(SAV.DaycareIndex, value);
+                SAV.Edited = true;
+            }
+            else if (tb == TB_GameSync)
+            {
+                var value = filterText.PadLeft(SAV.GameSyncIDSize, '0');
+                SAV.GameSyncID = value;
+                SAV.Edited = true;
+            }
+            else if (SAV.Generation >= 6)
+            {
+                var value = Convert.ToUInt64(filterText, 16);
                 if (tb == TB_Secure1)
-                    SAV.Secure1 = newval;
+                    SAV.Secure1 = value;
                 else if (tb == TB_Secure2)
-                    SAV.Secure2 = newval;
+                    SAV.Secure2 = value;
                 SAV.Edited = true;
             }
         }

@@ -8,6 +8,7 @@ namespace PKHeX
     {
         public SAV_SimpleTrainer()
         {
+            Loading = true;
             InitializeComponent();
             Util.TranslateInterface(this, Main.curlanguage);
 
@@ -23,6 +24,8 @@ namespace PKHeX
             L_SID.Visible = MT_SID.Visible = SAV.Generation > 2;
             L_Coins.Visible = B_MaxCoins.Visible = MT_Coins.Visible = SAV.Generation < 3;
             CB_Gender.Visible = SAV.Generation > 1;
+
+            L_PikaFriend.Visible = MT_PikaFriend.Visible = SAV.Generation == 1;
 
             TB_OTName.Text = SAV.OT;
             CB_Gender.SelectedIndex = SAV.Gender;
@@ -54,6 +57,8 @@ namespace PKHeX
                 CB_BattleStyle.SelectedIndex = sav1.BattleStyleSwitch ? 0 : 1;
                 CB_SoundType.SelectedIndex = sav1.Sound;
                 CB_TextSpeed.SelectedIndex = sav1.TextSpeed;
+
+                MT_PikaFriend.Text = sav1.PikaFriendship.ToString();
             }
 
             if (SAV is SAV2)
@@ -136,10 +141,14 @@ namespace PKHeX
             CAL_HoFTime.Value = new DateTime(2000, 1, 1).AddSeconds(SAV.SecondsToFame % 86400);
             CAL_AdventureStartDate.Value = new DateTime(2000, 1, 1).AddSeconds(SAV.SecondsToStart);
             CAL_AdventureStartTime.Value = new DateTime(2000, 1, 1).AddSeconds(SAV.SecondsToStart % 86400);
+
+            Loading = false;
         }
         private readonly CheckBox[] cba;
         private readonly SaveFile SAV = Main.SAV.Clone();
-        
+        private readonly bool Loading;
+        private bool MapUpdated;
+
         private void changeFFFF(object sender, EventArgs e)
         {
             MaskedTextBox box = sender as MaskedTextBox;
@@ -171,6 +180,11 @@ namespace PKHeX
                 sav1.Coin = (ushort) Util.ToUInt32(MT_Coins.Text);
                 sav1.Badges = badgeval & 0xFF;
 
+                var pf = Util.ToUInt32(MT_PikaFriend.Text);
+                if (pf > 255)
+                    pf = 255;
+                sav1.PikaFriendship = (byte) pf;
+
                 sav1.BattleEffects = CHK_BattleEffects.Checked;
                 sav1.BattleStyleSwitch = CB_BattleStyle.SelectedIndex == 0;
                 sav1.Sound = CB_SoundType.SelectedIndex;
@@ -192,10 +206,13 @@ namespace PKHeX
             if (SAV is SAV4)
             {
                 SAV4 s = (SAV4)SAV;
-                s.M = (int)NUD_M.Value;
-                s.X = (int)NUD_X.Value;
-                s.Z = (int)NUD_Z.Value;
-                s.Y = (int)NUD_Y.Value;
+                if (MapUpdated)
+                {
+                    s.M = (int)NUD_M.Value;
+                    s.X = (int)NUD_X.Value;
+                    s.Z = (int)NUD_Z.Value;
+                    s.Y = (int)NUD_Y.Value;
+                }
                 s.Badges = badgeval & 0xFF;
                 if (s.Version == GameVersion.HGSS)
                 {
@@ -205,10 +222,13 @@ namespace PKHeX
             else if (SAV is SAV5)
             {
                 SAV5 s = (SAV5)SAV;
-                s.M = (int)NUD_M.Value;
-                s.X = (int)NUD_X.Value;
-                s.Z = (int)NUD_Z.Value;
-                s.Y = (int)NUD_Y.Value;
+                if (MapUpdated)
+                {
+                    s.M = (int)NUD_M.Value;
+                    s.X = (int)NUD_X.Value;
+                    s.Z = (int)NUD_Z.Value;
+                    s.Y = (int)NUD_Y.Value;
+                }
                 s.Badges = badgeval & 0xFF;
             }
             
@@ -229,6 +249,11 @@ namespace PKHeX
             val -= val % 86400;
             val += (int)(time.Value - new DateTime(2000, 1, 1)).TotalSeconds;
             return val;
+        }
+        private void changeMapValue(object sender, EventArgs e)
+        {
+            if (!Loading)
+                MapUpdated = true;
         }
     }
 }

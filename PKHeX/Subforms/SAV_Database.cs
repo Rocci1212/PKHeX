@@ -1,9 +1,11 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace PKHeX
@@ -80,20 +82,22 @@ namespace PKHeX
                 p.ContextMenuStrip = mnu;
 
             // Load Data
-            RawDB = new List<PKM>();
-            foreach (string file in Directory.GetFiles(DatabasePath, "*", SearchOption.AllDirectories))
+            var dbTemp = new ConcurrentBag<PKM>();
+            var files = Directory.GetFiles(DatabasePath, "*", SearchOption.AllDirectories);
+            Parallel.ForEach(files, file =>
             {
                 FileInfo fi = new FileInfo(file);
-                if (fi.Extension.Contains(".pk") && PKX.getIsPKM(fi.Length))
-                    RawDB.Add(PKMConverter.getPKMfromBytes(File.ReadAllBytes(file), file));
-            }
-            // Fetch from save file
-            foreach (var pkm in Main.SAV.BoxData.Where(pk => pk.Species != 0))
-                RawDB.Add(pkm);
+                if (!fi.Extension.Contains(".pk") || !PKX.getIsPKM(fi.Length)) return;
+                var pk = PKMConverter.getPKMfromBytes(File.ReadAllBytes(file), file);
+                if (pk != null)
+                    dbTemp.Add(pk);
+            });
 
             // Prepare Database
-            RawDB = new List<PKM>(RawDB.Where(pk => pk.ChecksumValid && pk.Species != 0 && pk.Sanity == 0));
-            RawDB = new List<PKM>(RawDB.Distinct());
+            RawDB = new List<PKM>(dbTemp.OrderBy(pk => pk.Identifier)
+                                        .Concat(Main.SAV.BoxData.Where(pk => pk.Species != 0)) // Fetch from save file
+                                        .Where(pk => pk.ChecksumValid && pk.Species != 0 && pk.Sanity == 0)
+                                        .Distinct());
             setResults(RawDB);
 
             Menu_SearchSettings.DropDown.Closing += (sender, e) =>
@@ -462,9 +466,9 @@ namespace PKHeX
 
             // Filter for Selected Source
             if (!Menu_SearchBoxes.Checked)
-                res = res.Where(pk => pk.Identifier.StartsWith(DatabasePath + Path.DirectorySeparatorChar));
+                res = res.Where(pk => pk.Identifier.StartsWith(DatabasePath + Path.DirectorySeparatorChar, StringComparison.Ordinal));
             if (!Menu_SearchDatabase.Checked)
-                res = res.Where(pk => !pk.Identifier.StartsWith(DatabasePath + Path.DirectorySeparatorChar));
+                res = res.Where(pk => !pk.Identifier.StartsWith(DatabasePath + Path.DirectorySeparatorChar, StringComparison.Ordinal));
 
             slotSelected = -1; // reset the slot last viewed
             
@@ -485,9 +489,6 @@ namespace PKHeX
                         let split = line.Substring(1).Split('=')
                         where split.Length == 2 && !string.IsNullOrWhiteSpace(split[0])
                         select new BatchEditor.StringInstruction { PropertyName = split[0], PropertyValue = split[1], Evaluator = eval }).ToArray();
-
-                if (filters.Any(z => string.IsNullOrWhiteSpace(z.PropertyValue)))
-                { Util.Error("Empty Filter Value detected."); return; }
 
                 BatchEditor.screenStrings(filters);
                 res = res.Where(pkm => // Compare across all filters
@@ -627,7 +628,7 @@ namespace PKHeX
 
             var hashes = new List<string>();
             var deleted = 0;
-            var db = RawDB.Where(pk => pk.Identifier.StartsWith(DatabasePath + Path.DirectorySeparatorChar))
+            var db = RawDB.Where(pk => pk.Identifier.StartsWith(DatabasePath + Path.DirectorySeparatorChar, StringComparison.Ordinal))
                 .OrderByDescending(file => new FileInfo(file.Identifier).LastWriteTime);
             foreach (var pk in db)
             {

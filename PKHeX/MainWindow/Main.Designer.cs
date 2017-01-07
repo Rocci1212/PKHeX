@@ -2755,11 +2755,11 @@
             // TB_IVTotal
             // 
             this.TB_IVTotal.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.TB_IVTotal.Enabled = false;
             this.TB_IVTotal.Location = new System.Drawing.Point(0, 0);
             this.TB_IVTotal.Margin = new System.Windows.Forms.Padding(0, 0, 3, 0);
             this.TB_IVTotal.MaxLength = 3;
             this.TB_IVTotal.Name = "TB_IVTotal";
+            this.TB_IVTotal.ReadOnly = true;
             this.TB_IVTotal.Size = new System.Drawing.Size(22, 20);
             this.TB_IVTotal.TabIndex = 41;
             this.TB_IVTotal.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
@@ -2767,11 +2767,11 @@
             // TB_EVTotal
             // 
             this.TB_EVTotal.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.TB_EVTotal.Enabled = false;
             this.TB_EVTotal.Location = new System.Drawing.Point(28, 0);
             this.TB_EVTotal.Margin = new System.Windows.Forms.Padding(3, 0, 3, 0);
             this.TB_EVTotal.MaxLength = 3;
             this.TB_EVTotal.Name = "TB_EVTotal";
+            this.TB_EVTotal.ReadOnly = true;
             this.TB_EVTotal.Size = new System.Drawing.Size(28, 20);
             this.TB_EVTotal.TabIndex = 18;
             this.TB_EVTotal.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
@@ -5134,7 +5134,7 @@
             this.TB_RNGSeed.Size = new System.Drawing.Size(120, 20);
             this.TB_RNGSeed.TabIndex = 8;
             this.TB_RNGSeed.Text = "0123456789ABCDEF";
-            this.TB_RNGSeed.TextChanged += new System.EventHandler(this.updateEggRNGSeed);
+            this.TB_RNGSeed.Validated += new System.EventHandler(this.updateStringSeed);
             // 
             // dcpkx2
             // 
@@ -5349,7 +5349,7 @@
             this.TB_Secure2.Size = new System.Drawing.Size(120, 20);
             this.TB_Secure2.TabIndex = 17;
             this.TB_Secure2.Text = "0000000000000000";
-            this.TB_Secure2.TextChanged += new System.EventHandler(this.updateU64);
+            this.TB_Secure2.Validated += new System.EventHandler(this.updateStringSeed);
             // 
             // L_Secure1
             // 
@@ -5370,7 +5370,7 @@
             this.TB_Secure1.Size = new System.Drawing.Size(120, 20);
             this.TB_Secure1.TabIndex = 15;
             this.TB_Secure1.Text = "0000000000000000";
-            this.TB_Secure1.TextChanged += new System.EventHandler(this.updateU64);
+            this.TB_Secure1.Validated += new System.EventHandler(this.updateStringSeed);
             // 
             // B_JPEG
             // 
@@ -5401,7 +5401,7 @@
             this.TB_GameSync.Size = new System.Drawing.Size(120, 20);
             this.TB_GameSync.TabIndex = 10;
             this.TB_GameSync.Text = "0000000000000000";
-            this.TB_GameSync.TextChanged += new System.EventHandler(this.updateGameSyncID);
+            this.TB_GameSync.Validated += new System.EventHandler(this.updateStringSeed);
             // 
             // B_SaveBoxBin
             // 
