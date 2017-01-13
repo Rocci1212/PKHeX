@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PKHeX
+namespace PKHeX.Core
 {
     public enum Severity
     {
@@ -12,7 +12,7 @@ namespace PKHeX
         Valid = 1,
         NotImplemented = 2,
     }
-    public enum CheckIdentifier
+    internal enum CheckIdentifier
     {
         Move,
         RelearnMove,
@@ -44,14 +44,14 @@ namespace PKHeX
     }
     public class CheckResult
     {
-        public Severity Judgement = Severity.Valid;
-        public string Comment = "Valid";
+        internal readonly Severity Judgement = Severity.Valid;
+        internal string Comment = "Valid";
         public bool Valid => Judgement >= Severity.Fishy;
         public bool Flag;
-        public readonly CheckIdentifier Identifier;
+        private readonly CheckIdentifier Identifier;
 
-        public CheckResult(CheckIdentifier i) { }
-        public CheckResult(Severity s, string c, CheckIdentifier i)
+        internal CheckResult(CheckIdentifier i) { }
+        internal CheckResult(Severity s, string c, CheckIdentifier i)
         {
             Judgement = s;
             Comment = c;
@@ -1082,11 +1082,29 @@ namespace PKHeX
             if (pkm.HT_Gender > 1)
                 return new CheckResult(Severity.Invalid, $"HT Gender invalid {pkm.HT_Gender}.", CheckIdentifier.History);
 
+            MysteryGift mg = EncounterMatch as MysteryGift;
             WC6 MatchedWC6 = EncounterMatch as WC6;
+            WC7 MatchedWC7 = EncounterMatch as WC7;
             if (MatchedWC6?.OT.Length > 0) // Has Event OT -- null propagation yields false if MatchedWC6=null
             {
-                if (pkm.OT_Friendship != pkm.PersonalInfo.BaseFriendship)
+                if (pkm.OT_Friendship != PersonalTable.AO[MatchedWC6.Species].BaseFriendship)
                     return new CheckResult(Severity.Invalid, "Event OT Friendship does not match base friendship.", CheckIdentifier.History);
+                if (pkm.OT_Affection != 0)
+                    return new CheckResult(Severity.Invalid, "Event OT Affection should be zero.", CheckIdentifier.History);
+                if (pkm.CurrentHandler != 1)
+                    return new CheckResult(Severity.Invalid, "Current handler should not be Event OT.", CheckIdentifier.History);
+            }
+            else if (MatchedWC7?.OT.Length > 0) // Has Event OT -- null propagation yields false if MatchedWC7=null
+            {
+                if (pkm.OT_Friendship != PersonalTable.SM[MatchedWC7.Species].BaseFriendship)
+                    return new CheckResult(Severity.Invalid, "Event OT Friendship does not match base friendship.", CheckIdentifier.History);
+                if (pkm.OT_Affection != 0)
+                    return new CheckResult(Severity.Invalid, "Event OT Affection should be zero.", CheckIdentifier.History);
+                if (pkm.CurrentHandler != 1)
+                    return new CheckResult(Severity.Invalid, "Current handler should not be Event OT.", CheckIdentifier.History);
+            }
+            else if (mg != null && mg.Format < 6 && pkm.Format >= 6)
+            {
                 if (pkm.OT_Affection != 0)
                     return new CheckResult(Severity.Invalid, "Event OT Affection should be zero.", CheckIdentifier.History);
                 if (pkm.CurrentHandler != 1)
@@ -1852,6 +1870,12 @@ namespace PKHeX
                     if (res.All(r => r.Valid))
                         break;
                 }
+                
+                // Duplicate Moves Check
+                for (int i = 0; i < 4; i++)
+                    if (Moves.Count(m => m != 0 && m == Moves[i]) > 1)
+                        res[i] = new CheckResult(Severity.Invalid, "Duplicate Relearn Move.", CheckIdentifier.RelearnMove);
+
                 return res;
             }
             if (Moves[0] != 0) // DexNav only?
@@ -1882,7 +1906,7 @@ namespace PKHeX
             return res;
         }
 
-        internal static string[] movelist = Util.getMovesList("en");
+        public static string[] movelist = Util.getMovesList("en");
         private static readonly string[] EventRibName =
         {
             "Country", "National", "Earth", "World", "Classic",

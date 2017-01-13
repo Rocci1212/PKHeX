@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text;
 
-namespace PKHeX
+namespace PKHeX.Core
 {
     public sealed class SAV6 : SaveFile
     {
@@ -347,7 +347,7 @@ namespace PKHeX
             get { return Data[TrainerCard + 5]; }
             set { Data[TrainerCard + 5] = (byte)value; }
         }
-        public int Sprite
+        public override int MultiplayerSpriteID
         {
             get { return Data[TrainerCard + 7]; }
             set { Data[TrainerCard + 7] = (byte)value; }
