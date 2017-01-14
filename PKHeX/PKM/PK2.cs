@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace PKHeX
+namespace PKHeX.Core
 {
     public class PK2 : PKM
     {
@@ -358,61 +358,61 @@ namespace PKHeX
             return pk1;
         }
 
-        public PK3 convertToPK3()
-        {
-            PK3 pk3 = new PK3();
-            pk3.Nature = (int)PKHeX.Nature.Hardy;
-            pk3.AltForm = 0;
-            TransferPropertiesWithReflection(this, pk3);
-            pk3.Ball = 4; // pokeball
+        //public PK3 convertToPK3()
+        //{
+        //    PK3 pk3 = new PK3();
+        //    pk3.Nature = (int)PKHeX.Nature.Hardy;
+        //    pk3.AltForm = 0;
+        //    TransferPropertiesWithReflection(this, pk3);
+        //    pk3.Ball = 4; // pokeball
 
-            // todo need to overhaul - scale ev's, and set hp type based upon old hidden power
-            pk3.EV_HP = (ushort)Math.Floor(Math.Min(255, Math.Floor(Math.Sqrt(Math.Max(0, EV_HP - 1)) + 1)));
-            pk3.EV_ATK = (ushort)Math.Floor(Math.Min(255, Math.Floor(Math.Sqrt(Math.Max(0, EV_ATK - 1)) + 1)));
-            pk3.EV_DEF = (ushort)Math.Floor(Math.Min(255, Math.Floor(Math.Sqrt(Math.Max(0, EV_DEF - 1)) + 1)));
-            pk3.EV_SPE = (ushort)Math.Floor(Math.Min(255, Math.Floor(Math.Sqrt(Math.Max(0, EV_SPE - 1)) + 1)));
-            pk3.EV_SPA = (ushort)Math.Floor(Math.Min(255, Math.Floor(Math.Sqrt(Math.Max(0, EV_SPA - 1)) + 1)));
-            pk3.EV_SPD = (ushort)Math.Floor(Math.Min(255, Math.Floor(Math.Sqrt(Math.Max(0, EV_SPD - 1)) + 1)));
+        //    // todo need to overhaul - scale ev's, and set hp type based upon old hidden power
+        //    pk3.EV_HP = (ushort)Math.Floor(Math.Min(255, Math.Floor(Math.Sqrt(Math.Max(0, EV_HP - 1)) + 1)));
+        //    pk3.EV_ATK = (ushort)Math.Floor(Math.Min(255, Math.Floor(Math.Sqrt(Math.Max(0, EV_ATK - 1)) + 1)));
+        //    pk3.EV_DEF = (ushort)Math.Floor(Math.Min(255, Math.Floor(Math.Sqrt(Math.Max(0, EV_DEF - 1)) + 1)));
+        //    pk3.EV_SPE = (ushort)Math.Floor(Math.Min(255, Math.Floor(Math.Sqrt(Math.Max(0, EV_SPE - 1)) + 1)));
+        //    pk3.EV_SPA = (ushort)Math.Floor(Math.Min(255, Math.Floor(Math.Sqrt(Math.Max(0, EV_SPA - 1)) + 1)));
+        //    pk3.EV_SPD = (ushort)Math.Floor(Math.Min(255, Math.Floor(Math.Sqrt(Math.Max(0, EV_SPD - 1)) + 1)));
 
-            // legalize the evs
-            int evSum = pk3.EV_HP + pk3.EV_ATK + pk3.EV_DEF + pk3.EV_SPE + pk3.EV_SPA + pk3.EV_SPD;
-            if (evSum > 510)
-            {
-                pk3.EV_HP = Convert.ToInt32(Convert.ToDouble(pk3.EV_HP) / evSum * 510);
-                pk3.EV_ATK = Convert.ToInt32(Convert.ToDouble(pk3.EV_ATK) / evSum * 510);
-                pk3.EV_DEF = Convert.ToInt32(Convert.ToDouble(pk3.EV_DEF) / evSum * 510);
-                pk3.EV_SPE = Convert.ToInt32(Convert.ToDouble(pk3.EV_SPE) / evSum * 510);
-                pk3.EV_SPA = Convert.ToInt32(Convert.ToDouble(pk3.EV_SPA) / evSum * 510);
-                pk3.EV_SPD = Convert.ToInt32(Convert.ToDouble(pk3.EV_SPD) / evSum * 510);
-            }
+        //    // legalize the evs
+        //    int evSum = pk3.EV_HP + pk3.EV_ATK + pk3.EV_DEF + pk3.EV_SPE + pk3.EV_SPA + pk3.EV_SPD;
+        //    if (evSum > 510)
+        //    {
+        //        pk3.EV_HP = Convert.ToInt32(Convert.ToDouble(pk3.EV_HP) / evSum * 510);
+        //        pk3.EV_ATK = Convert.ToInt32(Convert.ToDouble(pk3.EV_ATK) / evSum * 510);
+        //        pk3.EV_DEF = Convert.ToInt32(Convert.ToDouble(pk3.EV_DEF) / evSum * 510);
+        //        pk3.EV_SPE = Convert.ToInt32(Convert.ToDouble(pk3.EV_SPE) / evSum * 510);
+        //        pk3.EV_SPA = Convert.ToInt32(Convert.ToDouble(pk3.EV_SPA) / evSum * 510);
+        //        pk3.EV_SPD = Convert.ToInt32(Convert.ToDouble(pk3.EV_SPD) / evSum * 510);
+        //    }
 
-            pk3.IV_HP = IV_HP * 2;
-            pk3.IV_ATK = IV_ATK * 2;
-            pk3.IV_DEF = IV_DEF * 2;
-            pk3.IV_SPE = IV_SPE * 2;
-            pk3.IV_SPA = IV_SPA * 2;
-            pk3.IV_SPD = IV_SPD * 2;
-            int[] newIvs = PKX.setHPIVs(HPType, new int[] { pk3.IV_HP, pk3.IV_ATK, pk3.IV_DEF, pk3.IV_SPA, pk3.IV_SPD, pk3.IV_SPE });
-            pk3.IV_HP = newIvs[0];
-            pk3.IV_ATK = newIvs[1];
-            pk3.IV_DEF = newIvs[2];
-            pk3.IV_SPA = newIvs[3];
-            pk3.IV_SPD = newIvs[4];
-            pk3.IV_SPE = newIvs[5];
+        //    pk3.IV_HP = IV_HP * 2;
+        //    pk3.IV_ATK = IV_ATK * 2;
+        //    pk3.IV_DEF = IV_DEF * 2;
+        //    pk3.IV_SPE = IV_SPE * 2;
+        //    pk3.IV_SPA = IV_SPA * 2;
+        //    pk3.IV_SPD = IV_SPD * 2;
+        //    int[] newIvs = PKX.setHPIVs(HPType, new int[] { pk3.IV_HP, pk3.IV_ATK, pk3.IV_DEF, pk3.IV_SPA, pk3.IV_SPD, pk3.IV_SPE });
+        //    pk3.IV_HP = newIvs[0];
+        //    pk3.IV_ATK = newIvs[1];
+        //    pk3.IV_DEF = newIvs[2];
+        //    pk3.IV_SPA = newIvs[3];
+        //    pk3.IV_SPD = newIvs[4];
+        //    pk3.IV_SPE = newIvs[5];
 
-            // for my own edification - R = Red, S = Crystal
-            if (Met_Location == 0)
-                pk3.Version = (int)PKHeX.GameVersion.R;
-            else
-                pk3.Version = (int)PKHeX.GameVersion.S;
+        //    // for my own edification - R = Red, S = Crystal
+        //    if (Met_Location == 0)
+        //        pk3.Version = (int)PKHeX.GameVersion.R;
+        //    else
+        //        pk3.Version = (int)PKHeX.GameVersion.S;
 
-            if (IsShiny)
-                pk3.setShinyPID();
-            else
-                pk3.PID = PKX.getRandomPID(pk3.Species, pk3.Gender, pk3.Version, pk3.Nature, pk3.Format, (uint)(1 * 0x10001));
-            pk3.Checksum = CalculateChecksum();
-            return pk3;
-        }
+        //    if (IsShiny)
+        //        pk3.setShinyPID();
+        //    else
+        //        pk3.PID = PKX.getRandomPID(pk3.Species, pk3.Gender, pk3.Version, pk3.Nature, pk3.Format, (uint)(1 * 0x10001));
+        //    pk3.Checksum = CalculateChecksum();
+        //    return pk3;
+        //}
     }
 
     public class PokemonList2
