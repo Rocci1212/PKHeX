@@ -74,7 +74,7 @@ namespace PKHeX.Core
                 case GameVersion.Pt:
                     return new[] {new[] {0x0000, 0xCF18, 0xCF2A}, new[] {0xCF2C, 0x1F0FC, 0x1F10E}};
                 case GameVersion.HGSS:
-                    return new[] {new[] {0x0000, 0xF618, 0xF626}, new[] {0xF700, 0x12300, 0x21A0E}};
+                    return new[] {new[] {0x0000, 0xF618, 0xF626}, new[] {0xF700, 0x21A00, 0x21A0E}};
                     
                 default:
                     return null;
@@ -86,8 +86,8 @@ namespace PKHeX.Core
             if (c == null)
                 return;
 
-            BitConverter.GetBytes(SaveUtil.ccitt16(getData(c[0][0] + GBO, c[0][1] + GBO))).CopyTo(Data, c[0][2] + GBO);
-            BitConverter.GetBytes(SaveUtil.ccitt16(getData(c[1][0] + SBO, c[1][1] + SBO))).CopyTo(Data, c[1][2] + SBO);
+            BitConverter.GetBytes(SaveUtil.ccitt16(getData(c[0][0] + GBO, c[0][1] - c[0][0]))).CopyTo(Data, c[0][2] + GBO);
+            BitConverter.GetBytes(SaveUtil.ccitt16(getData(c[1][0] + SBO, c[1][1] - c[1][0]))).CopyTo(Data, c[1][2] + SBO);
         }
         public override bool ChecksumsValid
         {
@@ -97,9 +97,9 @@ namespace PKHeX.Core
                 if (c == null)
                     return false;
 
-                if (SaveUtil.ccitt16(getData(c[0][0] + GBO, c[0][1] + GBO)) != BitConverter.ToUInt16(Data, c[0][2] + GBO))
+                if (SaveUtil.ccitt16(getData(c[0][0] + GBO, c[0][1] - c[0][0])) != BitConverter.ToUInt16(Data, c[0][2] + GBO))
                     return false; // Small Fail
-                if (SaveUtil.ccitt16(getData(c[1][0] + SBO, c[1][1] + SBO)) != BitConverter.ToUInt16(Data, c[1][2] + SBO))
+                if (SaveUtil.ccitt16(getData(c[1][0] + SBO, c[1][1] - c[1][0])) != BitConverter.ToUInt16(Data, c[1][2] + SBO))
                     return false; // Large Fail
 
                 return true;
@@ -114,9 +114,9 @@ namespace PKHeX.Core
                     return "Unable to check Save File.";
 
                 string r = "";
-                if (SaveUtil.ccitt16(getData(c[0][0] + GBO, c[0][1] + GBO)) != BitConverter.ToUInt16(Data, c[0][2] + GBO))
+                if (SaveUtil.ccitt16(getData(c[0][0] + GBO, c[0][1] - c[0][0])) != BitConverter.ToUInt16(Data, c[0][2] + GBO))
                     r += "Small block checksum is invalid" + Environment.NewLine;
-                if (SaveUtil.ccitt16(getData(c[1][0] + SBO, c[1][1] + SBO)) != BitConverter.ToUInt16(Data, c[1][2] + SBO))
+                if (SaveUtil.ccitt16(getData(c[1][0] + SBO, c[1][1] - c[1][0])) != BitConverter.ToUInt16(Data, c[1][2] + SBO))
                     r += "Large block checksum is invalid" + Environment.NewLine;
 
                 return r.Length == 0 ? "Checksums valid." : r.TrimEnd();
@@ -592,6 +592,42 @@ namespace PKHeX.Core
                     return true;
             return false;
         }
+
+        private static int[] matchMysteryGifts(MysteryGift[] value)
+        {
+            if (value == null)
+                return null;
+
+            int[] cardMatch = new int[8];
+            for (int i = 0; i < 8; i++)
+            {
+                var pgt = value[i] as PGT;
+                if (pgt == null)
+                    continue;
+
+                if (pgt.CardType == 0) // empty
+                {
+                    cardMatch[i] = pgt.Slot = 0;
+                    continue;
+                }
+
+                cardMatch[i] = pgt.Slot = 3;
+                for (byte j = 0; j < 3; j++)
+                {
+                    var pcd = value[8 + j] as PCD;
+                    if (pcd == null)
+                        continue;
+
+                    // Check if data matches (except Slot @ 0x02)
+                    if (!pcd.GiftEquals(pgt))
+                        continue;
+
+                    cardMatch[i] = pgt.Slot = j;
+                    break;
+                }
+            }
+            return cardMatch;
+        }
         public override MysteryGiftAlbum GiftAlbum
         {
             get
@@ -612,6 +648,12 @@ namespace PKHeX.Core
 
                 MysteryGiftReceivedFlags = value.Flags;
                 MysteryGiftCards = value.Gifts;
+
+                if (Version != GameVersion.DP)
+                    return;
+
+                bool[] activeGifts = value.Gifts.Select(gift => !gift.Empty).ToArray();
+                MysteryGiftDPSlotActiveFlags = activeGifts;
             }
         }
         protected override bool[] MysteryGiftReceivedFlags
@@ -642,6 +684,38 @@ namespace PKHeX.Core
                 Edited = true;
             }
         }
+
+        private const uint MysteryGiftDPSlotActive = 0xEDB88320;
+        private bool[] MysteryGiftDPSlotActiveFlags
+        {
+            get
+            {
+                if (Version != GameVersion.DP)
+                    return null;
+
+                int ofs = WondercardFlags + 0x100; // skip over flags
+                bool[] active = new bool[GiftCountMax]; // 8 PGT, 3 PCD
+                for (int i = 0; i < active.Length; i++)
+                    active[i] = BitConverter.ToUInt32(Data, ofs + 4*i) == MysteryGiftDPSlotActive;
+
+                return active;
+            }
+            set
+            {
+                if (Version != GameVersion.DP)
+                    return;
+                if (value == null || value.Length != GiftCountMax)
+                    return;
+
+                int ofs = WondercardFlags + 0x100; // skip over flags
+                for (int i = 0; i < value.Length; i++)
+                {
+                    byte[] magic = BitConverter.GetBytes(value[i] ? MysteryGiftDPSlotActive : 0); // 4 bytes
+                    setData(magic, ofs + 4*i);
+                }
+            }
+        }
+
         protected override MysteryGift[] MysteryGiftCards
         {
             get
@@ -657,6 +731,11 @@ namespace PKHeX.Core
             {
                 if (value == null)
                     return;
+
+                var Matches = matchMysteryGifts(value); // automatically applied
+                if (Matches == null)
+                    return;
+
                 for (int i = 0; i < 8; i++) // 8 PGT
                     if (value[i] is PGT)
                         setData(value[i].Data, WondercardData + i*PGT.Size);

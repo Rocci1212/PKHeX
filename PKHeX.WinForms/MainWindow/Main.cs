@@ -262,7 +262,8 @@ namespace PKHeX.WinForms
             string l = Settings.Language;
             int lang = Array.IndexOf(GameInfo.lang_val, l);
             if (lang < 0) Array.IndexOf(GameInfo.lang_val, "en");
-            languageID = lang < 0 ? 1 : lang;
+            if (lang > -1)
+                languageID = lang;
 
             // Version Check
             if (Settings.Version.Length > 0) // already run on system
@@ -525,7 +526,7 @@ namespace PKHeX.WinForms
             for (int i = 0; i < formStrings.Length; i++)
                 if (formStrings[i].Contains(Set.Form ?? ""))
                 { form = i; break; }
-            CB_Form.SelectedIndex = form;
+            CB_Form.SelectedIndex = Math.Min(CB_Form.Items.Count-1, form);
 
             // Set Ability
             int[] abilities = SAV.Personal.getAbilities(Set.Species, form);
@@ -1026,7 +1027,6 @@ namespace PKHeX.WinForms
 
 
             // Generational Interface
-            byte[] extraBytes = new byte[1];
             Tip1.RemoveAll(); Tip2.RemoveAll(); Tip3.RemoveAll(); // TSV/PSV
 
             FLP_Country.Visible = FLP_SubRegion.Visible = FLP_3DSRegion.Visible = SAV.Generation >= 6;
@@ -1035,7 +1035,7 @@ namespace PKHeX.WinForms
             PB_Legal.Visible = PB_WarnMove1.Visible = PB_WarnMove2.Visible = PB_WarnMove3.Visible = PB_WarnMove4.Visible = SAV.Generation >= 6;
 
             PB_MarkPentagon.Visible = SAV.Generation >= 6;
-            PB_MarkAlola.Visible = SAV.Generation >= 7;
+            PB_MarkAlola.Visible = PB_MarkVC.Visible = PB_MarkHorohoro.Visible = SAV.Generation >= 7;
             TB_Secure1.Visible = TB_Secure2.Visible = L_Secure1.Visible = L_Secure2.Visible = SAV.Exportable && SAV.Generation >= 6;
             TB_GameSync.Visible = L_GameSync.Visible = SAV.Exportable && SAV.Generation >= 6;
 
@@ -1603,6 +1603,9 @@ namespace PKHeX.WinForms
                 return;
 
             PB_MarkAlola.Image = ImageUtil.ChangeOpacity(PB_MarkAlola.InitialImage, pkm.Gen7 ? 1 : 0.1);
+            PB_MarkVC.Image = ImageUtil.ChangeOpacity(PB_MarkVC.InitialImage, pkm.VC ? 1 : 0.1);
+            PB_MarkHorohoro.Image = ImageUtil.ChangeOpacity(PB_MarkHorohoro.InitialImage, pkm.Horohoro ? 1 : 0.1);
+
             for (int i = 0; i < pba.Length; i++)
             {
                 switch (pkm.Markings[i])
