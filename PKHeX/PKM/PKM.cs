@@ -284,7 +284,7 @@ namespace PKHeX.Core
                 if (Gen4) return 4;
                 if (Gen3) return 3;
                 return -1;
-            }
+            } 
         }
         public bool PKRS_Infected => PKRS_Strain > 0;
         public bool PKRS_Cured => PKRS_Days == 0 && PKRS_Strain > 0;

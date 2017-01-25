@@ -1060,9 +1060,6 @@ namespace PKHeX.WinForms
             FLP_PKRS.Visible = FLP_EggPKRSRight.Visible = SAV.Generation >= 2;
             Label_OTGender.Visible = SAV.Generation >= 2;
 
-            if (SAV.Generation == 1)
-                Label_IsShiny.Visible = false;
-
             if (SAV.Version == GameVersion.BATREV)
             {
                 L_SaveSlot.Visible = CB_SaveSlot.Visible = true;
@@ -1581,8 +1578,8 @@ namespace PKHeX.WinForms
             bool isShiny = pkm.IsShiny;
 
             // Set the Controls
-            BTN_Shinytize.Visible = BTN_Shinytize.Enabled = !isShiny && SAV.Generation > 1;
-            Label_IsShiny.Visible = isShiny && SAV.Generation > 1;
+            BTN_Shinytize.Visible = BTN_Shinytize.Enabled = !isShiny;
+            Label_IsShiny.Visible = isShiny;
 
             // Refresh Markings (for Shiny Star if applicable)
             setMarkings();
@@ -2064,9 +2061,9 @@ namespace PKHeX.WinForms
                         : (pkm.Gender == 1 ? Color.Red : Color.Blue);
                     if (pkm.Species == 201 && e != null) // Unown
                         CB_Form.SelectedIndex = pkm.AltForm;
-                    setIsShiny(null);
-                    getQuickFiller(dragout);
                 }
+                setIsShiny(null);
+                getQuickFiller(dragout);
             }
                     
             CB_HPType.SelectedValue = pkm.HPType;
@@ -2647,9 +2644,20 @@ namespace PKHeX.WinForms
                 pkm.setShinyPID();
             else
             {
-                int[] atkIVs = {2, 3, 6, 7, 10, 11, 14, 15};
-                TB_ATKIV.Text = atkIVs[Util.rnd32()%atkIVs.Length].ToString();
-                TB_DEFIV.Text = "10";
+                // IVs determine shininess
+                // All 10IV except for one where (IV & 2 == 2) [gen specific]
+                int[] and2 = {2, 3, 6, 7, 10, 11, 14, 15};
+                int randIV = and2[Util.rnd32()%and2.Length];
+                if (pkm.Format == 1)
+                {
+                    TB_ATKIV.Text = "10"; // an attempt was made
+                    TB_DEFIV.Text = randIV.ToString();
+                }
+                else // pkm.Format == 2
+                {
+                    TB_ATKIV.Text = randIV.ToString();
+                    TB_DEFIV.Text = "10";
+                }
                 TB_SPEIV.Text = "10";
                 TB_SPAIV.Text = "10";
                 updateIVs(null, null);

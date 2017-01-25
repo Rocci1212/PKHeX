@@ -10,7 +10,7 @@ namespace PKHeX.Core
         public static int ConsoleRegion = 1;
         public static string OT_Name = "PKHeX";
         public static int OT_Gender;
-        
+
         public static void updateConfig(int SUBREGION, int COUNTRY, int _3DSREGION, string TRAINERNAME, int TRAINERGENDER)
         {
             Region = SUBREGION;
@@ -108,7 +108,7 @@ namespace PKHeX.Core
                     return new PK5(data, ident);
                 case 6:
                     PKM pkx = new PK6(data, ident);
-                    if (pkx.SM)
+                    if (pkx.SM || pkx.VC || pkx.Horohoro)
                         pkx = new PK7(data, ident);
                     return pkx;
                 default:
@@ -169,7 +169,7 @@ namespace PKHeX.Core
                         }
                         pkm = ((PK4)pkm).convertToPK5();
                         if (toFormat == 5)
-                            break;
+                        break;
                         pkm = ((PK5)pkm).convertToPK6();
                         if (toFormat == 6)
                             break;
@@ -204,10 +204,10 @@ namespace PKHeX.Core
                             if (PKMType == typeof(BK4))
                                 pkm = ((PK4)pkm).convertToBK4();
                             break;
-                        }
+                            }
                         pkm = ((PK4)pkm).convertToPK5();
                         if (toFormat == 5)
-                            break;
+                        break;
                         pkm = ((PK5)pkm).convertToPK6();
                         if (toFormat == 6)
                             break;
@@ -264,8 +264,10 @@ namespace PKHeX.Core
                             break;
                         goto case nameof(PK6);
                     case nameof(PK6):
-                        pkm = new PK7(pkm.Data, pkm.Identifier);
-                        break;
+                        pkm = ((PK6)pkm).convertToPK7();
+                        if (toFormat == 7)
+                            break;
+                        goto case nameof(PK7);
                     case nameof(PK7):
                         break;
                 }

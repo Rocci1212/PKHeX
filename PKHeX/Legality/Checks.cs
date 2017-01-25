@@ -794,6 +794,14 @@ namespace PKHeX.Core
             }
             if (EncounterType == typeof (EncounterSlot[]))
             {
+                if (pkm.Met_Location == 30016 && pkm.Gen7) // Poké Pelago
+                {
+                    if (pkm.Ball == 0x04)
+                        AddLine(Severity.Valid, "Correct ball on Poké Pelago encounter.", CheckIdentifier.Ball);
+                    else
+                        AddLine(Severity.Invalid, "Incorrect ball on Poké Pelago encounter.", CheckIdentifier.Ball);
+                }
+
                 if (Legal.getWildBalls(pkm).Contains(pkm.Ball))
                     AddLine(Severity.Valid, "Correct ball on ingame encounter.", CheckIdentifier.Ball);
                 else
@@ -1531,6 +1539,9 @@ namespace PKHeX.Core
         }
         private void verifyMisc()
         {
+            if (pkm.Format == 7 && pkm.Data[0x2A] != 0)
+            { AddLine(Severity.Invalid, "Incorrectly transferred from previous generation.", CheckIdentifier.Misc); return; }
+
             if (pkm.IsEgg)
             {
                 if (new[] {pkm.Move1_PPUps, pkm.Move2_PPUps, pkm.Move3_PPUps, pkm.Move4_PPUps}.Any(ppup => ppup > 0))
@@ -1602,61 +1613,6 @@ namespace PKHeX.Core
                     }
                     break;
             }
-        }
-        private void verifyG7PreBank()
-        {
-            // Checks only performed before Bank is released
-
-            if (pkm.GenNumber < 7)
-            {
-                AddLine(Severity.Invalid, "No official transfer method is possible prior to Bank Release.", CheckIdentifier.Special);
-                return;
-            }
-
-            var Lineage = Legal.getLineage(pkm).ToArray();
-            if (Lineage.Any(e => Legal.Fossils.Contains(e)) || new[] {137,233,474}.Contains(pkm.Species)) // Only Poké Ball possible (fossils/porygon)
-            {
-                if (pkm.Ball == 4)
-                    AddLine(Severity.Valid, "Ball possible.", CheckIdentifier.Ball);
-                else
-                    AddLine(Severity.Invalid, "Only Poké Ball possible.", CheckIdentifier.Ball);
-            }
-
-            if (pkm.Species == 235) // Smeargle
-                if (pkm.Moves.Any(move => Legal.Bank_Sketch7.Contains(move)))
-                    AddLine(Severity.Invalid, "Sketched move not possible prior to Bank Release.", CheckIdentifier.Special);
-
-            int baseSpecies = Legal.getBaseSpecies(pkm);
-            var info = Legal.Bank_Egg7.FirstOrDefault(entry => entry.Species == baseSpecies && (entry.Form == 0 || entry.Form == pkm.AltForm)); // Grimer form edge case
-            if (info != null)
-            {
-                int[] moves = pkm.RelearnMoves.Intersect(info.Relearn).ToArray();
-                if (moves.Any())
-                {
-                    foreach (int m in moves)
-                        vRelearn[Array.IndexOf(pkm.RelearnMoves, m)] = new CheckResult(Severity.Invalid, "Egg move not possible prior to Bank Release.", CheckIdentifier.RelearnMove);
-                }
-            }
-
-            if (Legal.Bank_NotAvailable7.Contains(baseSpecies) && !EncounterIsMysteryGift)
-                AddLine(Severity.Invalid, "Species not obtainable prior to Bank Release.", CheckIdentifier.Special);
-
-            if (Legal.EvolveToAlolanForms.Contains(pkm.Species))
-            {
-                if (pkm.Species == 25)
-                {
-                    if (pkm.AltForm != 0)
-                        AddLine(Severity.Invalid, "Form not obtainable.", CheckIdentifier.Special);
-                }
-                else if (pkm.AltForm != 1)
-                    AddLine(Severity.Invalid, "Form not obtainable prior to Bank Release.", CheckIdentifier.Special);
-            }
-
-            if (new[] {422,423}.Contains(pkm.Species) && pkm.AltForm != 1) // East Sea only
-                AddLine(Severity.Invalid, "Form not obtainable prior to Bank Release.", CheckIdentifier.Special);
-
-            if (Legal.Bank_NoHidden7.Contains(pkm.Species) && pkm.AbilityNumber == 4)
-                AddLine(Severity.Invalid, "Ability not obtainable prior to Bank Release.", CheckIdentifier.Special);
         }
 
         private CheckResult[] verifyMoves()
