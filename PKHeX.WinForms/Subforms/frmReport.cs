@@ -17,6 +17,7 @@ namespace PKHeX.WinForms
         public class Preview
         {
             private readonly PKM pkm;
+            public int NationalDexNo => pkm.Species;
             public string Position => pkm.Identifier;
             public Image Sprite => pkm.Sprite();
             public string Nickname => pkm.Nickname;
@@ -25,6 +26,7 @@ namespace PKHeX.WinForms
             public string Gender => Main.gendersymbols[pkm.Gender];
             public string ESV => pkm.PSV.ToString("0000");
             public string HP_Type => GameInfo.Strings.types[pkm.HPType+1];
+            //public int HP_Power => 
             public string Ability => GameInfo.Strings.abilitylist[pkm.Ability];
             public string Move1 => GameInfo.Strings.movelist[pkm.Move1];
             public string Move2 => GameInfo.Strings.movelist[pkm.Move2];
@@ -106,6 +108,8 @@ namespace PKHeX.WinForms
             public int Met_Month => pkm.MetDate.GetValueOrDefault().Month;
             public int Met_Day => pkm.MetDate.GetValueOrDefault().Day;
             public int Encounter => pkm.EncounterType;
+            public string Legality => new LegalityAnalysis(pkm).Report;
+            public string Ribbons => pkm.RibbonDescription;
 
             #endregion
             public Preview(PKM p) { pkm = p; }
