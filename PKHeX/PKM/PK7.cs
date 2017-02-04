@@ -93,7 +93,7 @@ namespace PKHeX.Core
         public override int CNT_Smart { get { return Data[0x27]; } set { Data[0x27] = (byte)value; } }
         public override int CNT_Tough { get { return Data[0x28]; } set { Data[0x28] = (byte)value; } }
         public override int CNT_Sheen { get { return Data[0x29]; } set { Data[0x29] = (byte)value; } }
-        public byte _0x2A { get { return Data[0x2A]; } protected set { Data[0x2A] = value; } }
+        public byte PelagoEventStatus { get { return Data[0x2A]; } protected set { Data[0x2A] = value; } }
         private byte PKRS { get { return Data[0x2B]; } set { Data[0x2B] = value; } }
         public override int PKRS_Days { get { return PKRS & 0xF; } set { PKRS = (byte)(PKRS & ~0xF | value); } }
         public override int PKRS_Strain { get { return PKRS >> 4; } set { PKRS = (byte)(PKRS & 0xF | value << 4); } }
@@ -486,14 +486,11 @@ namespace PKHeX.Core
         public void FixMemories()
         {
             Enjoyment = Fullness = 0;
-            Geo1_Region = Geo1_Country =
-                Geo2_Region = Geo2_Country =
-                Geo3_Region = Geo3_Country =
-                Geo4_Region = Geo4_Country =
-                Geo5_Region = Geo5_Country = 0;
 
             if (IsEgg) // No memories if is egg.
             {
+                Geo1_Country = Geo2_Country = Geo3_Country = Geo4_Country = Geo5_Country =
+                Geo1_Region = Geo2_Region = Geo3_Region = Geo4_Region = Geo5_Region =
                 HT_Friendship = HT_Affection = HT_TextVar = HT_Memory = HT_Intensity = HT_Feeling =
                 /* OT_Friendship */ OT_Affection = OT_TextVar = OT_Memory = OT_Intensity = OT_Feeling = 0;
 
@@ -506,10 +503,49 @@ namespace PKHeX.Core
                 HT_Friendship = HT_Affection = HT_TextVar = HT_Memory = HT_Intensity = HT_Feeling = 0;
             if (GenNumber < 6)
                 OT_Affection = OT_TextVar = OT_Memory = OT_Intensity = OT_Feeling = 0;
-            if (GenNumber >= 7)
+
+            Geo1_Region = Geo1_Country > 0 ? Geo1_Region : 0;
+            Geo2_Region = Geo2_Country > 0 ? Geo2_Region : 0;
+            Geo3_Region = Geo3_Country > 0 ? Geo3_Region : 0;
+            Geo4_Region = Geo4_Country > 0 ? Geo4_Region : 0;
+            Geo5_Region = Geo5_Country > 0 ? Geo5_Region : 0;
+
+            while (true)
             {
-                HT_TextVar = HT_Memory = HT_Intensity = HT_Feeling =
-                OT_TextVar = OT_Memory = OT_Intensity = OT_Feeling = 0;
+                if (Geo5_Country != 0 && Geo4_Country == 0)
+                {
+                    Geo4_Country = Geo5_Country;
+                    Geo4_Region = Geo5_Region;
+                    Geo5_Country = Geo5_Region = 0;
+                }
+                if (Geo4_Country != 0 && Geo3_Country == 0)
+                {
+                    Geo3_Country = Geo4_Country;
+                    Geo3_Region = Geo4_Region;
+                    Geo4_Country = Geo4_Region = 0;
+                    continue;
+                }
+                if (Geo3_Country != 0 && Geo2_Country == 0)
+                {
+                    Geo2_Country = Geo3_Country;
+                    Geo2_Region = Geo3_Region;
+                    Geo3_Country = Geo3_Region = 0;
+                    continue;
+                }
+                if (Geo2_Country != 0 && Geo1_Country == 0)
+                {
+                    Geo1_Country = Geo2_Country;
+                    Geo1_Region = Geo2_Region;
+                    Geo2_Country = Geo2_Region = 0;
+                    continue;
+                }
+                break;
+            }
+
+            if (GenNumber < 7) // must be transferred via bank, and must have memories
+            {
+                TradeMemory(Bank: true);
+                // georegions cleared on 6->7, no need to set
             }
         }
 
@@ -563,7 +599,7 @@ namespace PKHeX.Core
         }
         private void TradeGeoLocation(int GeoCountry, int GeoRegion)
         {
-            return; // No geolocations are set, ever!
+            return; // No geolocations are set, ever! -- except for bank. Don't set them anyway.
             //// Allow the method to abort if the values are invalid
             //if (GeoCountry < 0 || GeoRegion < 0)
             //    return;

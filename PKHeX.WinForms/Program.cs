@@ -1,4 +1,8 @@
-﻿using System;
+﻿using Microsoft.Win32;
+using System;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -23,10 +27,52 @@ namespace PKHeX.WinForms
             AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
 #endif
 
+            try
+            {
+                if (GetFrameworkVersion() >= 393295)
+                {
+                    StartPKHeX();
+                }
+                else
+                {
+                    // Todo: make this translatable
+                    MessageBox.Show(".NET Framework 4.6 needs to be installed for this version of PKHeX to run.", "PKHeX Error", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                    Process.Start(@"https://www.microsoft.com/download/details.aspx?id=48130");
+                }
+            }
+            catch (FileNotFoundException ex)
+            {
+                // Check whether or not the exception was from missing PKHeX.Core, rather than something else in the constructor of Main
+                if (ex.TargetSite == typeof(Program).GetMethod(nameof(StartPKHeX), BindingFlags.Static | BindingFlags.NonPublic))
+                {
+                    // Exception came from StartPKHeX and (probably) corresponds to missing PKHeX.Core
+                    MessageBox.Show("Could not locate PKHeX.Core.dll. Make sure you're running PKHeX together with its code library. Usually caused when all files are not extracted.", "PKHeX Error", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+                    return;
+                }
+                else
+                {
+                    // Exception came from Main
+                    throw;
+                }
+            }
+        }
+
+        private static void StartPKHeX()
+        {
             // Run the application
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             Application.Run(new Main());
+        }
+
+        public static int GetFrameworkVersion()
+        {
+            const string subkey = @"SOFTWARE\Microsoft\NET Framework Setup\NDP\v4\Full\";
+            using (RegistryKey ndpKey = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32).OpenSubKey(subkey))
+            {
+                int releaseKey = (int)ndpKey.GetValue("Release");
+                return releaseKey;
+            }
         }
 
         // Handle the UI exceptions by showing a dialog box, and asking the user whether or not they wish to abort execution.

@@ -10,13 +10,13 @@ namespace PKHeX.Core
         private readonly EvolutionLineage[] Lineage;
         private readonly GameVersion Game;
         private readonly PersonalTable Personal;
-        private readonly int MaxSpecies;
+        private readonly int MaxSpeciesTree;
 
-        public EvolutionTree(byte[][] data, GameVersion game, PersonalTable personal, int maxSpecies)
+        public EvolutionTree(byte[][] data, GameVersion game, PersonalTable personal, int maxSpeciesTree)
         {
             Game = game;
             Personal = personal;
-            MaxSpecies = maxSpecies;
+            MaxSpeciesTree = maxSpeciesTree;
             switch (game)
             {
                 case GameVersion.SM:
@@ -32,7 +32,7 @@ namespace PKHeX.Core
             for (int i = 0; i < Entries.Count; i++)
                 Lineage[i] = new EvolutionLineage();
             if (Game == GameVersion.ORAS)
-                Array.Resize(ref Lineage, maxSpecies + 1);
+                Array.Resize(ref Lineage, maxSpeciesTree + 1);
 
             // Populate Lineages
             for (int i = 1; i < Lineage.Length; i++)
@@ -77,12 +77,15 @@ namespace PKHeX.Core
                     fixEvoTreeSM();
                     break;
                 case GameVersion.ORAS:
-                    fixEvoTreeORAS();
                     break;
             }
         }
         private void fixEvoTreeSM()
         {
+            // Wormadam -- Copy Burmy 0 to Wormadam-1/2
+            Lineage[Personal.getFormeIndex(413, 1)].Chain.Insert(0, Lineage[413].Chain[0]);
+            Lineage[Personal.getFormeIndex(413, 2)].Chain.Insert(0, Lineage[413].Chain[0]);
+
             // Shellos -- Move Shellos-1 evo from Gastrodon-0 to Gastrodon-1
             Lineage[Personal.getFormeIndex(422 + 1, 1)].Chain.Insert(0, Lineage[422 + 1].Chain[0]);
             Lineage[422+1].Chain.RemoveAt(0);
@@ -108,16 +111,20 @@ namespace PKHeX.Core
             Lineage[711].Chain.RemoveRange(0, 3);
 
             // Add past gen evolutions for other Marowak and Exeggutor
-            var exegg = Lineage[Personal.getFormeIndex(103, 1)].Chain[0].StageEntryMethods[0].Copy(103);
+            var raichu1 = Lineage[Personal.getFormeIndex(26, 1)];
+            var evo1 = raichu1.Chain[0].StageEntryMethods[0].Copy();
+            Lineage[26].Chain.Add(new EvolutionStage { StageEntryMethods = new List<EvolutionMethod> { evo1 } });
+            var evo2 = raichu1.Chain[1].StageEntryMethods[0].Copy();
+            evo2.Form = -1; evo2.Banlist = new[] { GameVersion.SN, GameVersion.MN };
+            Lineage[26].Chain.Add(new EvolutionStage { StageEntryMethods = new List<EvolutionMethod> { evo2 } });
+
+            var exegg = Lineage[Personal.getFormeIndex(103, 1)].Chain[0].StageEntryMethods[0].Copy();
             exegg.Form = -1; exegg.Banlist = new[] { GameVersion.SN, GameVersion.MN }; exegg.Method = 4; // No night required (doesn't matter)
             Lineage[103].Chain.Add(new EvolutionStage { StageEntryMethods = new List<EvolutionMethod> { exegg } });
 
-            var marowak = Lineage[Personal.getFormeIndex(105, 1)].Chain[0].StageEntryMethods[0].Copy(105);
+            var marowak = Lineage[Personal.getFormeIndex(105, 1)].Chain[0].StageEntryMethods[0].Copy();
             marowak.Form = -1; marowak.Banlist = new[] {GameVersion.SN, GameVersion.MN};
             Lineage[105].Chain.Add(new EvolutionStage { StageEntryMethods = new List<EvolutionMethod> { marowak } });
-        }
-        private void fixEvoTreeORAS()
-        {
         }
 
         private int getIndex(PKM pkm)
@@ -125,7 +132,8 @@ namespace PKHeX.Core
             if (pkm.Format < 7)
                 return pkm.Species;
 
-            return Personal.getFormeIndex(pkm.Species, pkm.AltForm);
+            var form = pkm.Species == 678 ? 0 : pkm.AltForm; // override Meowstic forme index
+            return Personal.getFormeIndex(pkm.Species, form);
         }
         private int getIndex(EvolutionMethod evo)
         {
@@ -145,7 +153,8 @@ namespace PKHeX.Core
         public IEnumerable<DexLevel> getValidPreEvolutions(PKM pkm, int lvl, bool skipChecks = false)
         {
             int index = getIndex(pkm);
-            return Lineage[index].getExplicitLineage(pkm, lvl, skipChecks, MaxSpecies);
+            int maxSpeciesOrigin = Legal.getMaxSpeciesOrigin(pkm);
+            return Lineage[index].getExplicitLineage(pkm, lvl, skipChecks, MaxSpeciesTree, maxSpeciesOrigin);
         }
     }
 
@@ -215,10 +224,10 @@ namespace PKHeX.Core
         {
             RequiresLevelUp = false;
             if (Form > -1)
-                if (pkm.AltForm != Form)
+                if (!skipChecks && pkm.AltForm != Form)
                     return false;
 
-            if (Banlist.Contains((GameVersion)pkm.Version))
+            if (!skipChecks && Banlist.Contains((GameVersion)pkm.Version))
                 return false;
 
             switch (Method)
@@ -289,16 +298,6 @@ namespace PKHeX.Core
             }
         }
 
-        public DexLevel GetDexLevel(int lvl)
-        {
-            return new DexLevel
-            {
-                Species = Species,
-                Level = lvl,
-                Form = Form,
-                Flag = Method,
-            };
-        }
         public DexLevel GetDexLevel(int species, int lvl)
         {
 
@@ -311,8 +310,10 @@ namespace PKHeX.Core
             };
         }
 
-        public EvolutionMethod Copy(int species)
+        public EvolutionMethod Copy(int species = -1)
         {
+            if (species < 0)
+                species = Species;
             return new EvolutionMethod
             {
                 Method = Method,
@@ -346,7 +347,7 @@ namespace PKHeX.Core
             Chain.Insert(0, evo);
         }
 
-        public IEnumerable<DexLevel> getExplicitLineage(PKM pkm, int lvl, bool skipChecks, int maxSpecies)
+        public IEnumerable<DexLevel> getExplicitLineage(PKM pkm, int lvl, bool skipChecks, int maxSpeciesTree, int maxSpeciesOrigin)
         {
             List<DexLevel> dl = new List<DexLevel> { new DexLevel { Species = pkm.Species, Level = lvl, Form = pkm.AltForm } };
             for (int i = Chain.Count-1; i >= 0; i--) // reverse evolution!
@@ -358,11 +359,14 @@ namespace PKHeX.Core
                         continue;
 
                     oneValid = true;
-                    if (evo.Species > maxSpecies) // Gen7 Personal Formes -- unmap the forme personal entry to the actual species ID since species are consecutive
-                        dl.Add(evo.GetDexLevel(pkm.Species - Chain.Count + i, lvl));
-                    else
-                        dl.Add(evo.GetDexLevel(lvl));
+                    int species = evo.Species;
 
+                    // Gen7 Personal Formes -- unmap the forme personal entry ID to the actual species ID since species are consecutive
+                    if (evo.Species > maxSpeciesTree)
+                        species = pkm.Species - Chain.Count + i;
+
+                    dl.Add(evo.GetDexLevel(species, lvl));
+                    
                     if (evo.RequiresLevelUp)
                         lvl--;
                     break;
@@ -370,6 +374,11 @@ namespace PKHeX.Core
                 if (!oneValid)
                     break;
             }
+
+            // Remove future gen preevolutions, no munchlax in a gen3 snorlax, no pichu in a gen1 vc raichu, etc
+            if (dl.Any(d => d.Species <= maxSpeciesOrigin) && dl.Last().Species > maxSpeciesOrigin)
+                dl.RemoveAt(dl.Count - 1); 
+
             return dl;
         }
     }

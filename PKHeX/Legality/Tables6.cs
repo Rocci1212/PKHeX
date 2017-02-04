@@ -5,8 +5,14 @@ namespace PKHeX.Core
     public static partial class Legal
     {
         internal const int MaxSpeciesID_6 = 721;
-
-        // PKHeX Valid Array Storage
+        internal const int MaxMoveID_6_XY = 617;
+        internal const int MaxMoveID_6_AO = 621;
+        internal const int MaxItemID_6_XY = 717;
+        internal const int MaxItemID_6_AO = 775;
+        internal const int MaxAbilityID_6_XY = 188;
+        internal const int MaxAbilityID_6_AO = 191;
+        internal const int MaxBallID_6 = 0x19;
+        internal const int MaxGameID_6 = 27; // OR
 
         #region Met Locations
         internal static readonly int[] Met_XYc = {0, 60002, 30002,};
@@ -628,7 +634,7 @@ namespace PKHeX.Core
         };
         internal static readonly int[] Inherit_Dream =
         {
-            012, 015, 016, 019, 021, 023, 027, 029, 037, 041, 043, 046, 048, 050, 052, 054, 056, 058, 060, 063, 066, 069,
+            010, 013, 016, 019, 021, 023, 027, 029, 037, 041, 043, 046, 048, 050, 052, 054, 056, 058, 060, 063, 066, 069,
             072, 074, 077, 079, 083, 084, 086, 088, 090, 092, 095, 096, 098, 102, 104, 108, 109, 111, 113, 114, 115, 116,
             118, 122, 123, 127, 129, 131, 133, 138, 140, 142, 143, 147, 161, 163, 165, 167, 170, 173, 174, 175, 177, 179,
             183, 185, 187, 190, 191, 193, 194, 198, 200, 202, 203, 204, 206, 207, 209, 211, 213, 214, 215, 216, 218, 220,
@@ -676,7 +682,7 @@ namespace PKHeX.Core
             497, 500, 503, //3
             566, 567, 696, 697, 698, 699 // Fossil Only obtain
         };
-        internal static readonly int[] Ban_Gen4Ball =
+        internal static readonly int[] Ban_Gen4Ball_6 =
         {
             152, 155, 158, //1 - Chikorita, Cyndaquil, Totodile
             153, 156, 159, //2

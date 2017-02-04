@@ -280,6 +280,7 @@ namespace PKHeX.Core
         {
             get
             {
+                if (VC) return 7;
                 if (Gen7) return 7;
                 if (Gen6) return 6;
                 if (Gen5) return 5;
@@ -373,7 +374,7 @@ namespace PKHeX.Core
                     return;
                 byte b = 0;
                 for (int i = 0; i < value.Length; i++)
-                    b |= (byte)((value[i] & 1) << i);
+                    b |= (byte)(Math.Min(value[i], 1) << i);
                 MarkValue = b;
             }
         }
@@ -385,7 +386,7 @@ namespace PKHeX.Core
         }
         public virtual int HPType
         {
-            get { return 15 * ((IV_HP & 1) + 2 * (IV_ATK & 1) + 4 * (IV_DEF & 1) + 8 * (IV_SPE & 1) + 16 * (IV_SPA & 1) + 32 * (IV_SPD & 1)) / 63; }
+            get { return 0xF * ((IV_HP & 1) << 0 | (IV_ATK & 1) << 1 | (IV_DEF & 1) << 2 | (IV_SPE & 1) << 3 | (IV_SPA & 1) << 4 | (IV_SPD & 1) << 5) / 0x3F; }
             set
             {
                 IV_HP = (IV_HP & ~1) + PKX.hpivs[value, 0];

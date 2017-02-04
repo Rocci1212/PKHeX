@@ -122,6 +122,26 @@ namespace PKHeX.WinForms
 
             FLP_SAVtools.Scroll += WinFormsUtil.PanelScroll;
 
+            // Add Legality check to right click context menus
+            // ToolStripItem can't be in multiple contextmenus, so put the item back when closing.
+            var cm = new[]{mnuV, mnuVSD};
+            foreach (var c in cm)
+            {
+                c.Opening += (sender, e) =>
+                {
+                    var items = ((ContextMenuStrip)sender).Items;
+                    if (ModifierKeys == Keys.Control)
+                        items.Add(mnuLLegality);
+                    else if (items.Contains(mnuLLegality))
+                        items.Remove(mnuLLegality);
+                };
+            }
+            mnuL.Opening += (sender, e) =>
+            {
+                if (mnuL.Items[0] != mnuLLegality)
+                    mnuL.Items.Insert(0, mnuLLegality);
+            };
+
             // Load WC6 folder to legality
             refreshWC6DB();
             // Load WC7 folder to legality
@@ -412,18 +432,15 @@ namespace PKHeX.WinForms
         private void mainMenuUnicode(object sender, EventArgs e)
         {
             Properties.Settings.Default.Unicode = unicode = Menu_Unicode.Checked;
-            Properties.Settings.Default.Save();
             updateUnicode();
         }
         private void mainMenuModifyDex(object sender, EventArgs e)
         {
             Properties.Settings.Default.SetUpdateDex = SaveFile.SetUpdateDex = Menu_ModifyDex.Checked;
-            Properties.Settings.Default.Save();
         }
         private void mainMenuModifyPKM(object sender, EventArgs e)
         {
             Properties.Settings.Default.SetUpdatePKM = SaveFile.SetUpdatePKM = Menu_ModifyPKM.Checked;
-            Properties.Settings.Default.Save();
         }
         private void mainMenuBoxLoad(object sender, EventArgs e)
         {
@@ -707,7 +724,7 @@ namespace PKHeX.WinForms
             {
                 openSAV(sav, path);
             }
-            else if ((temp = PKMConverter.getPKMfromBytes(input)) != null)
+            else if ((temp = PKMConverter.getPKMfromBytes(input, prefer: SAV.Generation)) != null)
             {
                 PKM pk = PKMConverter.convertToFormat(temp, SAV.PKMType, out c);
                 if (pk == null)
@@ -1206,10 +1223,16 @@ namespace PKHeX.WinForms
             if (!string.IsNullOrWhiteSpace(path)) // Actual Save
             {
                 // Check location write protection
-                if ((new DirectoryInfo(path).Attributes & FileAttributes.ReadOnly) != 0)
+                bool locked = true;
+                try { locked = (new DirectoryInfo(path).Attributes & FileAttributes.ReadOnly) != 0; }
+                catch { }
+
+                if (locked)
                     WinFormsUtil.Alert("Save file's location is write protected:\n" + path,
                         "If the path is a removable disk (SD card), please ensure the write protection switch is not set.");
             }
+
+            TemplateFields();
 
             // Indicate audibly the save is loaded
             SystemSounds.Beep.Play();
@@ -1286,7 +1309,6 @@ namespace PKHeX.WinForms
 
             // Set the culture (makes it easy to pass language to other forms)
             Properties.Settings.Default.Language = curlanguage;
-            Properties.Settings.Default.Save();
             Thread.CurrentThread.CurrentCulture = new CultureInfo(curlanguage.Substring(0, 2));
             Thread.CurrentThread.CurrentUICulture = Thread.CurrentThread.CurrentCulture;
         }
@@ -1318,21 +1340,23 @@ namespace PKHeX.WinForms
 
             // Load Data
             populateFields(pkm);
-            {
-                CB_Species.SelectedValue = SAV.MaxSpeciesID;
-                CB_Move1.SelectedValue = 1;
-                TB_OT.Text = "PKHeX";
-                TB_TID.Text = 12345.ToString();
-                TB_SID.Text = 54321.ToString();
-                CB_GameOrigin.SelectedIndex = 0;
-                int curlang = Array.IndexOf(GameInfo.lang_val, curlanguage);
-                CB_Language.SelectedIndex = curlang > CB_Language.Items.Count - 1 ? 1 : curlang;
-                CB_Ball.SelectedIndex = Math.Min(0, CB_Ball.Items.Count - 1);
-                CB_Country.SelectedIndex = Math.Min(0, CB_Country.Items.Count - 1);
-                CAL_MetDate.Value = CAL_EggDate.Value = DateTime.Today;
-
-                CB_BoxSelect.SelectedIndex = 0;
-            }
+            TemplateFields();
+            CB_BoxSelect.SelectedIndex = 0;
+        }
+        private void TemplateFields()
+        {
+            CB_Species.SelectedValue = SAV.MaxSpeciesID;
+            CB_Move1.SelectedValue = 1;
+            TB_OT.Text = "PKHeX";
+            TB_TID.Text = 12345.ToString();
+            TB_SID.Text = 54321.ToString();
+            CB_GameOrigin.SelectedIndex = 0;
+            int curlang = Array.IndexOf(GameInfo.lang_val, curlanguage);
+            CB_Language.SelectedIndex = curlang > CB_Language.Items.Count - 1 ? 1 : curlang;
+            CB_Ball.SelectedIndex = Math.Min(0, CB_Ball.Items.Count - 1);
+            CB_Country.SelectedIndex = Math.Min(0, CB_Country.Items.Count - 1);
+            CAL_MetDate.Value = CAL_EggDate.Value = DateTime.Today;
+            CHK_Nicknamed.Checked = false;
         }
         private void InitializeLanguage()
         {
@@ -1569,9 +1593,12 @@ namespace PKHeX.WinForms
             if (!ability_list.Any())
                 ability_list.Add(GameInfo.Strings.abilitylist[0] + abilIdentifier[0]);
 
+            bool tmp = fieldsLoaded;
+            fieldsLoaded = false;
             int abil = CB_Ability.SelectedIndex;
             CB_Ability.DataSource = ability_list;
             CB_Ability.SelectedIndex = abil < 0 || abil >= CB_Ability.Items.Count ? 0 : abil;
+            fieldsLoaded = tmp;
         }
         // PKX Data Calculation Functions //
         private void setIsShiny(object sender)
@@ -1640,7 +1667,7 @@ namespace PKHeX.WinForms
 
                 if (ekx == null) return;
                 
-                PKM pk = PKMConverter.getPKMfromBytes(ekx);
+                PKM pk = PKMConverter.getPKMfromBytes(ekx, prefer: SAV.Generation);
                 if (pk == null) { WinFormsUtil.Alert("Decoded data not a valid PKM.", $"QR Data Size: {ekx.Length}"); }
                 else
                 {
@@ -2250,6 +2277,9 @@ namespace PKHeX.WinForms
             changingFields = true;
             MT_Form.Text = CB_Form.SelectedIndex.ToString();
             changingFields = false;
+
+            if (fieldsLoaded)
+                getQuickFiller(dragout);
         }
         private void updateHaXForm(object sender, EventArgs e)
         {
@@ -2259,6 +2289,9 @@ namespace PKHeX.WinForms
             int form = pkm.AltForm = Util.ToInt32(MT_Form.Text);
             CB_Form.SelectedIndex = CB_Form.Items.Count > form ? form : -1;
             changingFields = false;
+
+            if (fieldsLoaded)
+                getQuickFiller(dragout);
         }
         private void updatePP(object sender, EventArgs e)
         {
@@ -2827,40 +2860,48 @@ namespace PKHeX.WinForms
         }
         private void updateLegality(LegalityAnalysis la = null, bool skipMoveRepop = false)
         {
-            if (!fieldsLoaded)
-                return;
-            Legality = la ?? new LegalityAnalysis(pkm);
-            if (!Legality.Parsed || HaX)
+            if (pkm.GenNumber >= 6)
             {
-                PB_Legal.Visible = false;
-                return;
+                if (!fieldsLoaded)
+                    return;
+                Legality = la ?? new LegalityAnalysis(pkm);
+                if (!Legality.Parsed || HaX)
+                {
+                    PB_Legal.Visible = false;
+                    return;
+                }
+                PB_Legal.Visible = true;
+
+                PB_Legal.Image = Legality.Valid ? Resources.valid : Resources.warn;
+
+                // Refresh Move Legality
+                for (int i = 0; i < 4; i++)
+                    movePB[i].Visible = !Legality.vMoves[i].Valid && !HaX;
+
+                for (int i = 0; i < 4; i++)
+                    relearnPB[i].Visible = !Legality.vRelearn[i].Valid && !HaX;
+
+                if (skipMoveRepop)
+                    return;
+                // Resort moves
+                bool tmp = fieldsLoaded;
+                fieldsLoaded = false;
+                var cb = new[] { CB_Move1, CB_Move2, CB_Move3, CB_Move4 };
+                var moves = Legality.AllSuggestedMovesAndRelearn;
+                var moveList = GameInfo.MoveDataSource.OrderByDescending(m => moves.Contains(m.Value)).ToList();
+                foreach (ComboBox c in cb)
+                {
+                    var index = WinFormsUtil.getIndex(c);
+                    c.DataSource = new BindingSource(moveList, null);
+                    c.SelectedValue = index;
+                }
+                fieldsLoaded |= tmp;
             }
-            PB_Legal.Visible = true;
-
-            PB_Legal.Image = Legality.Valid ? Resources.valid : Resources.warn;
-
-            // Refresh Move Legality
-            for (int i = 0; i < 4; i++)
-                movePB[i].Visible = !Legality.vMoves[i].Valid && !HaX;
-            
-            for (int i = 0; i < 4; i++)
-                relearnPB[i].Visible = !Legality.vRelearn[i].Valid && !HaX;
-
-            if (skipMoveRepop)
-                return;
-            // Resort moves
-            bool tmp = fieldsLoaded;
-            fieldsLoaded = false;
-            var cb = new[] {CB_Move1, CB_Move2, CB_Move3, CB_Move4 };
-            var moves = Legality.AllSuggestedMovesAndRelearn;
-            var moveList = GameInfo.MoveDataSource.OrderByDescending(m => moves.Contains(m.Value)).ToList();
-            foreach (ComboBox c in cb)
+            else
             {
-                var index = WinFormsUtil.getIndex(c);
-                c.DataSource = new BindingSource(moveList, null);
-                c.SelectedValue = index;
+                PB_Legal.Visible = PB_WarnMove1.Visible = PB_WarnMove2.Visible = PB_WarnMove3.Visible = PB_WarnMove4.Visible =
+                PB_WarnRelearn1.Visible = PB_WarnRelearn2.Visible = PB_WarnRelearn3.Visible = PB_WarnRelearn4.Visible = false;
             }
-            fieldsLoaded |= tmp;
         }
 
         private void updateGender()
@@ -3097,7 +3138,10 @@ namespace PKHeX.WinForms
             if (!SAV.Edited)
                 return;
             if (DialogResult.Yes != WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Any unsaved changes will be lost.", "Are you sure you want to close PKHeX?"))
-                e.Cancel = true;
+            { e.Cancel = true; return; }
+
+            try { Properties.Settings.Default.Save(); }
+            catch (Exception x) { File.WriteAllLines("config error.txt", new[] {x.ToString()}); }
         }
         #endregion
 
@@ -3168,9 +3212,12 @@ namespace PKHeX.WinForms
                 SAV.Edited = false;
                 WinFormsUtil.Alert("SAV exported to:", main.FileName);
             }
-            catch (UnauthorizedAccessException x)
+            catch (Exception x)
             {
-                WinFormsUtil.Error(x.Message, "If destination is a removable disk (SD card), please ensure the write protection switch is not set.");
+                if (x is UnauthorizedAccessException || x is FileNotFoundException)
+                    WinFormsUtil.Error("Unable to save." + Environment.NewLine + x.Message, 
+                        "If destination is a removable disk (SD card), please ensure the write protection switch is not set.");
+                else throw;
             }
         }
 
@@ -3466,7 +3513,7 @@ namespace PKHeX.WinForms
             PKM pk = preparePKM();
 
             int slotSkipped = 0;
-            for (int i = 0; i < 30; i++) // set to every slot in box
+            for (int i = 0; i < SAV.BoxSlotCount; i++) // set to every slot in box
             {
                 if (SAV.getIsSlotLocked(CB_BoxSelect.SelectedIndex, i))
                 { slotSkipped++; continue; }
@@ -3484,7 +3531,11 @@ namespace PKHeX.WinForms
             int slot = getSlot(sender);
             PKM pk;
             if (slot >= 0)
+            {
                 pk = SAV.getStoredSlot(getPKXOffset(slot));
+                if (slot < 30 || slot >= 36) // not party
+                    pk.Box = CB_BoxSelect.SelectedIndex; // mark as in a box
+            }
             else if (verifiedPKM())
                 pk = preparePKM();
             else
@@ -3860,7 +3911,7 @@ namespace PKHeX.WinForms
             foreach (byte[] data in from file in filepaths where PKX.getIsPKM(new FileInfo(file).Length) select File.ReadAllBytes(file))
             {
                 string c;
-                PKM temp = PKMConverter.getPKMfromBytes(data);
+                PKM temp = PKMConverter.getPKMfromBytes(data, prefer: SAV.Generation);
                 PKM pk = PKMConverter.convertToFormat(temp, SAV.PKMType, out c);
 
                 if (pk != null) // Write to save
@@ -4215,7 +4266,7 @@ namespace PKHeX.WinForms
 
                 byte[] data = File.ReadAllBytes(file);
                 MysteryGift mg = MysteryGift.getMysteryGift(data, fi.Extension);
-                PKM temp = mg != null ? mg.convertToPKM(SAV) : PKMConverter.getPKMfromBytes(data);
+                PKM temp = mg?.convertToPKM(SAV) ?? PKMConverter.getPKMfromBytes(data, prefer: SAV.Generation);
                 string c;
 
                 PKM pk = PKMConverter.convertToFormat(temp, SAV.PKMType, out c);

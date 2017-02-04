@@ -343,8 +343,6 @@ namespace PKHeX.Core
                 Nickname = Util.getSpeciesList(Japanese ? "jp" : "en")[Species],
                 IsNicknamed = false,
 
-
-
                 Country = PKMConverter.Country,
                 Region = PKMConverter.Region,
                 ConsoleRegion = PKMConverter.ConsoleRegion,
@@ -352,6 +350,8 @@ namespace PKHeX.Core
                 HT_Name = PKMConverter.OT_Name,
                 HT_Gender = PKMConverter.OT_Gender,
                 Language = PKMConverter.Language,
+                Geo1_Country = PKMConverter.Country,
+                Geo1_Region = PKMConverter.Region
             };
             pk7.OT_Friendship = pk7.HT_Friendship = PersonalTable.SM[Species].BaseFriendship;
 
@@ -368,7 +368,7 @@ namespace PKHeX.Core
                 pk7.setShinyPID();
 
             int abil = 2; // Hidden
-            if (new[] {92, 93, 94, 109, 110, 151}.Contains(Species))
+            if (Legal.TransferSpeciesDefaultAbility_1.Contains(Species))
                 abil = 0; // Reset
             pk7.RefreshAbility(abil); // 0/1/2 (not 1/2/4)
 
