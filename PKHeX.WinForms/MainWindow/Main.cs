@@ -320,14 +320,14 @@ namespace PKHeX.WinForms
             string supported = string.Join(";", SAV.PKMExtensions.Select(s => "*."+s).Concat(new[] {"*.pkm"}));
             OpenFileDialog ofd = new OpenFileDialog
             {
-                Filter = $"Supported Files|main;*.sav;*.bin;*.{ekx};{supported};*.bak" +
+                Filter = "All Files|*.*" +
+                         $"|Supported Files|main;*.sav;*.dat;*.bin;*.{ekx};{supported};*.bak" +
                          "|3DS Main Files|main" +
-                         "|Save Files|*.sav" +
+                         "|Save Files|*.sav;*.dat;" +
                          $"|Decrypted PKM File|{supported}" +
                          $"|Encrypted PKM File|*.{ekx}" +
                          "|Binary File|*.bin" +
-                         "|Backup File|*.bak" +
-                         "|All Files|*.*"
+                         "|Backup File|*.bak"
             };
 
             // Detect main
@@ -691,7 +691,9 @@ namespace PKHeX.WinForms
             string ext = Path.GetExtension(path);
             FileInfo fi = new FileInfo(path);
             if (fi.Length > 0x10009C && fi.Length != 0x380000)
-                WinFormsUtil.Error("Input file is too large.", path);
+                WinFormsUtil.Error("Input file is too large." + Environment.NewLine + $"Size: {fi.Length} bytes", path);
+            else if (fi.Length < 32)
+                WinFormsUtil.Error("Input file is too small." + Environment.NewLine + $"Size: {fi.Length} bytes", path);
             else
             {
                 byte[] input; try { input = File.ReadAllBytes(path); }
@@ -913,6 +915,8 @@ namespace PKHeX.WinForms
             }
 
             // clean fields
+            bool WindowToggleRequired = SAV.Generation < 3 && sav.Generation >= 3; // version combobox refresh hack
+            bool WindowTranslationRequired = false;
             PKM pk = preparePKM();
             populateFields(SAV.BlankPKM);
             SAV = sav;
@@ -956,8 +960,6 @@ namespace PKHeX.WinForms
                 else { tabBoxMulti.SelectedIndex = 0; CB_BoxSelect.SelectedIndex = startBox; }
             }
             setPKXBoxes();   // Reload all of the PKX Windows
-
-            bool WindowTranslationRequired = false;
 
             // Hide content if not present in game.
             GB_SUBE.Visible = SAV.HasSUBE;
@@ -1201,7 +1203,17 @@ namespace PKHeX.WinForms
             PKMConverter.updateConfig(SAV.SubRegion, SAV.Country, SAV.ConsoleRegion, SAV.OT, SAV.Gender, SAV.Language);
 
             if (WindowTranslationRequired) // force update -- re-added controls may be untranslated
+            {
+                // Keep window title
+                title = Text;
                 WinFormsUtil.TranslateInterface(this, curlanguage);
+                Text = title;
+            }
+            if (WindowToggleRequired) // Version combobox selectedvalue needs a little help, only updates once it is visible
+            {
+                tabMain.SelectedTab = Tab_Met; // parent tab of CB_GameOrigin
+                tabMain.SelectedTab = Tab_Main; // first tab
+            }
             
             // No changes made yet
             UndoStack.Clear(); Menu_Undo.Enabled = false;
@@ -1383,11 +1395,11 @@ namespace PKHeX.WinForms
             CB_GameOrigin.DataSource = new BindingSource(GameInfo.VersionDataSource.Where(g => g.Value <= SAV.MaxGameID || SAV.Generation >= 3 && g.Value == 15).ToList(), null);
 
             // Set the Move ComboBoxes too..
-            var moves = (HaX ? GameInfo.HaXMoveDataSource : GameInfo.MoveDataSource).Where(m => m.Value <= SAV.MaxMoveID).ToList(); // Filter Z-Moves if appropriate
+            GameInfo.MoveDataSource = (HaX ? GameInfo.HaXMoveDataSource : GameInfo.LegalMoveDataSource).Where(m => m.Value <= SAV.MaxMoveID).ToList(); // Filter Z-Moves if appropriate
             foreach (ComboBox cb in new[] { CB_Move1, CB_Move2, CB_Move3, CB_Move4, CB_RelearnMove1, CB_RelearnMove2, CB_RelearnMove3, CB_RelearnMove4 })
             {
                 cb.DisplayMember = "Text"; cb.ValueMember = "Value";
-                cb.DataSource = new BindingSource(moves, null);
+                cb.DataSource = new BindingSource(GameInfo.MoveDataSource, null);
             }
         }
         private Action getFieldsfromPKM;
@@ -1930,8 +1942,12 @@ namespace PKHeX.WinForms
                 return;
 
             pkm = preparePKM();
+            updateLegality();
+            if (Legality.Valid)
+                return;
+
             var encounter = Legality.getSuggestedMetInfo();
-            if (encounter == null || encounter.Location < 0)
+            if (encounter == null || (pkm.Format >= 3 && encounter.Location < 0))
             {
                 WinFormsUtil.Alert("Unable to provide a suggestion.");
                 return;
@@ -1940,21 +1956,37 @@ namespace PKHeX.WinForms
             int level = encounter.Level;
             int location = encounter.Location;
             int minlvl = Legal.getLowestLevel(pkm, encounter.Species);
-
-            if (pkm.Met_Level == level && pkm.Met_Location == location && pkm.CurrentLevel >= minlvl)
+            if (minlvl == 0)
+                minlvl = level;
+            
+            if (pkm.CurrentLevel >= minlvl && pkm.Met_Level == level && pkm.Met_Location == location)
                 return;
+            if (minlvl < level)
+                minlvl = level;
 
-            var met_list = GameInfo.getLocationList((GameVersion)pkm.Version, SAV.Generation, egg: false);
-            var locstr = met_list.FirstOrDefault(loc => loc.Value == location)?.Text;
-            string suggestion = $"Suggested:\nMet Location: {locstr}\nMet Level: {level}";
+            var suggestion = new List<string> {"Suggested:"};
+            if (pkm.Format >= 3)
+            {
+                var met_list = GameInfo.getLocationList((GameVersion)pkm.Version, SAV.Generation, egg: false);
+                var locstr = met_list.FirstOrDefault(loc => loc.Value == location)?.Text;
+                suggestion.Add($"Met Location: {locstr}");
+                suggestion.Add($"Met Level: {level}");
+            }
             if (pkm.CurrentLevel < minlvl)
-                suggestion += $"\nCurrent Level {minlvl}";
+                suggestion.Add($"Current Level: {minlvl}");
 
-            if (WinFormsUtil.Prompt(MessageBoxButtons.YesNo, suggestion) != DialogResult.Yes)
+            if (suggestion.Count == 1) // no suggestion
                 return;
 
-            TB_MetLevel.Text = level.ToString();
-            CB_MetLocation.SelectedValue = location;
+            string suggest = string.Join(Environment.NewLine, suggestion);
+            if (WinFormsUtil.Prompt(MessageBoxButtons.YesNo, suggest) != DialogResult.Yes)
+                return;
+
+            if (pkm.Format >= 3)
+            {
+                TB_MetLevel.Text = level.ToString();
+                CB_MetLocation.SelectedValue = location;
+            }
 
             if (pkm.CurrentLevel < minlvl)
                 TB_Level.Text = minlvl.ToString();
@@ -2532,7 +2564,7 @@ namespace PKHeX.WinForms
                 species = 0; // get the egg name.
 
             // If name is that of another language, don't replace the nickname
-            if (species != 0 && !PKX.getIsNicknamedAnyLanguage(species, TB_Nickname.Text, SAV.Generation))
+            if (sender != CB_Language && species != 0 && !PKX.getIsNicknamedAnyLanguage(species, TB_Nickname.Text, SAV.Generation))
                 return;
 
             TB_Nickname.Text = PKX.getSpeciesNameGeneration(species, lang, SAV.Generation);
@@ -2837,7 +2869,9 @@ namespace PKHeX.WinForms
             LegalityAnalysis la = new LegalityAnalysis(pk);
             if (!la.Parsed)
             {
-                WinFormsUtil.Alert($"Checking legality of PK{pk.Format} files that originated from Gen{pk.GenNumber} is not supported.");
+                WinFormsUtil.Alert(pk.Format < 3
+                    ? $"Checking legality of PK{pk.Format} files is not supported."
+                    : $"Checking legality of PK{pk.Format} files that originated from Gen{pk.GenNumber} is not supported.");
                 return;
             }
             if (tabs)
@@ -2846,48 +2880,43 @@ namespace PKHeX.WinForms
         }
         private void updateLegality(LegalityAnalysis la = null, bool skipMoveRepop = false)
         {
-            if (pkm.GenNumber >= 6)
+            if (!fieldsLoaded)
+                return;
+            
+            Legality = la ?? new LegalityAnalysis(pkm);
+            if (!Legality.Parsed || HaX)
             {
-                if (!fieldsLoaded)
-                    return;
-                Legality = la ?? new LegalityAnalysis(pkm);
-                if (!Legality.Parsed || HaX)
-                {
-                    PB_Legal.Visible = false;
-                    return;
-                }
-                PB_Legal.Visible = true;
-
-                PB_Legal.Image = Legality.Valid ? Resources.valid : Resources.warn;
-
-                // Refresh Move Legality
-                for (int i = 0; i < 4; i++)
-                    movePB[i].Visible = !Legality.vMoves[i].Valid && !HaX;
-
-                for (int i = 0; i < 4; i++)
-                    relearnPB[i].Visible = !Legality.vRelearn[i].Valid && !HaX;
-
-                if (skipMoveRepop)
-                    return;
-                // Resort moves
-                bool tmp = fieldsLoaded;
-                fieldsLoaded = false;
-                var cb = new[] { CB_Move1, CB_Move2, CB_Move3, CB_Move4 };
-                var moves = Legality.AllSuggestedMovesAndRelearn;
-                var moveList = GameInfo.MoveDataSource.OrderByDescending(m => moves.Contains(m.Value)).ToList();
-                foreach (ComboBox c in cb)
-                {
-                    var index = WinFormsUtil.getIndex(c);
-                    c.DataSource = new BindingSource(moveList, null);
-                    c.SelectedValue = index;
-                }
-                fieldsLoaded |= tmp;
-            }
-            else
-            {
-                PB_Legal.Visible = PB_WarnMove1.Visible = PB_WarnMove2.Visible = PB_WarnMove3.Visible = PB_WarnMove4.Visible =
+                PB_Legal.Visible =
+                PB_WarnMove1.Visible = PB_WarnMove2.Visible = PB_WarnMove3.Visible = PB_WarnMove4.Visible =
                 PB_WarnRelearn1.Visible = PB_WarnRelearn2.Visible = PB_WarnRelearn3.Visible = PB_WarnRelearn4.Visible = false;
+                return;
             }
+
+            PB_Legal.Visible = true;
+            PB_Legal.Image = Legality.Valid ? Resources.valid : Resources.warn;
+
+            // Refresh Move Legality
+            for (int i = 0; i < 4; i++)
+                movePB[i].Visible = !Legality.vMoves[i].Valid && !HaX;
+            
+            for (int i = 0; i < 4; i++)
+                relearnPB[i].Visible = !Legality.vRelearn[i].Valid && !HaX && pkm.Format >= 6;
+
+            if (skipMoveRepop)
+                return;
+            // Resort moves
+            bool tmp = fieldsLoaded;
+            fieldsLoaded = false;
+            var cb = new[] {CB_Move1, CB_Move2, CB_Move3, CB_Move4};
+            var moves = Legality.AllSuggestedMovesAndRelearn;
+            var moveList = GameInfo.MoveDataSource.OrderByDescending(m => moves.Contains(m.Value)).ToList();
+            foreach (ComboBox c in cb)
+            {
+                var index = WinFormsUtil.getIndex(c);
+                c.DataSource = new BindingSource(moveList, null);
+                c.SelectedValue = index;
+            }
+            fieldsLoaded |= tmp;
         }
 
         private void updateGender()
@@ -3818,6 +3847,7 @@ namespace PKHeX.WinForms
             bool? noSetb = getPKMSetOverride();
 
             SAV.loadBoxes(path, out result, CB_BoxSelect.SelectedIndex, clearAll, noSetb);
+            setPKXBoxes();
             WinFormsUtil.Alert(result);
         }
         private void B_SaveBoxBin_Click(object sender, EventArgs e)

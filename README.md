@@ -6,8 +6,8 @@ Pokémon core series save editor, programmed in [C#](https://en.wikipedia.org/wi
 
 Supports the following files:
 * Save files ("main", .sav)
-* Individual Pokémon entity files (.pk*)
-* Mystery Gift files (.pgt, .pcd, .pgf, .wc*) including conversion to .pk*
+* Individual Pokémon entity files (.pk\*)
+* Mystery Gift files (.pgt, .pcd, .pgf, .wc\*) including conversion to .pk\*
 * Importing teams from Decrypted 3DS Battle Videos
 * Transferring from one generation to another, converting formats along the way.
 
@@ -42,4 +42,4 @@ PKHeX can be opened with IDEs such as [Visual Studio](https://www.visualstudio.c
 
 ### GNU/Linux
 
-Install MonoDevelop and [Mono](http://www.mono-project.com/) runtime with `flatpak install --user --from https://download.mono-project.com/repo/monodevelop.flatpakref`. GNU/Linux is not the main Operating System of developers of this program so there may be bugs; some may come from non GNU/Linux specific code of Mono (so developers using *BSD, Windows and OS X should be able to reproduce them).
+Install [MonoDevelop](http://www.monodevelop.com/) and [Mono Runtime](http://www.mono-project.com/) with `flatpak install --user --from https://download.mono-project.com/repo/monodevelop.flatpakref`. GNU/Linux is not the main Operating System of developers of this program so there may be bugs; some may come from non GNU/Linux specific code of Mono (so developers using *BSD, Windows and OS X should be able to reproduce them).
