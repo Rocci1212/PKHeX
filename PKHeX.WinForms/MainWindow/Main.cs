@@ -11,6 +11,7 @@ using System.Threading;
 using System.Windows.Forms;
 using PKHeX.Core;
 using PKHeX.Core.Properties;
+using System.Configuration;
 
 namespace PKHeX.WinForms
 {
@@ -161,9 +162,32 @@ namespace PKHeX.WinForms
                 ConfigUtil.checkConfig();
                 loadConfig(out BAKprompt, out showChangelog, out languageID); 
             }
-            catch (Exception e)
+            catch (ConfigurationErrorsException e)
             {
-                WinFormsUtil.Error("Failed to access settings:" + Environment.NewLine + e.Message, "Please delete corrupt user.config file.");
+                // Delete the settings if they exist
+                var settingsFilename = (e.InnerException as ConfigurationErrorsException)?.Filename;
+                if (!string.IsNullOrEmpty(settingsFilename) && File.Exists(settingsFilename))
+                {
+                    if (MessageBox.Show("PKHeX's settings are corrupt.  Would you like to reset the settings?  (Click Yes to delete the settings or No to close the program.", "PKHeX", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                    {
+                        File.Delete(settingsFilename);
+
+                        // This should theoretically work, but has failed in evandixon's testing
+                        // Properties.Settings.Default.Reload();
+
+                        // Instead, restart the application
+                        MessageBox.Show("The settings have been deleted.  Please restart PKHeX.");
+                        Process.GetCurrentProcess().Kill();
+                    }
+                    else
+                    {
+                        Process.GetCurrentProcess().Kill();
+                    }
+                }
+                else
+                {
+                    WinFormsUtil.Error("Unable to load settings.", e);
+                }
             }
             CB_MainLanguage.SelectedIndex = languageID;
 
@@ -321,9 +345,9 @@ namespace PKHeX.WinForms
             OpenFileDialog ofd = new OpenFileDialog
             {
                 Filter = "All Files|*.*" +
-                         $"|Supported Files|main;*.sav;*.dat;*.bin;*.{ekx};{supported};*.bak" +
+                         $"|Supported Files|main;*.sav;*.dat;*.gci;*.bin;*.{ekx};{supported};*.bak" +
                          "|3DS Main Files|main" +
-                         "|Save Files|*.sav;*.dat;" +
+                         "|Save Files|*.sav;*.dat;*.gci" +
                          $"|Decrypted PKM File|{supported}" +
                          $"|Encrypted PKM File|*.{ekx}" +
                          "|Binary File|*.bin" +
@@ -596,13 +620,13 @@ namespace PKHeX.WinForms
             TB_Friendship.Text = Set.Friendship.ToString();
 
             // Reset IV/EVs
-            BTN_RerollPID.PerformClick();
-            BTN_RerollEC.PerformClick();
+            updateRandomPID(sender, e);
+            updateRandomEC(sender, e);
             ComboBox[] p = {CB_PPu1, CB_PPu2, CB_PPu3, CB_PPu4};
             for (int i = 0; i < 4; i++)
                 p[i].SelectedIndex = m[i].SelectedIndex != 0 ? 3 : 0; // max PP
             
-            if (Set.Shiny) BTN_Shinytize.PerformClick();
+            if (Set.Shiny) updateShinyPID(sender, e);
             pkm = preparePKM();
             updateLegality();
         }
@@ -877,11 +901,11 @@ namespace PKHeX.WinForms
                 }
             }
             // Finish setting up the save file.
-            if (sav.IndeterminateGame && sav.Generation == 3)
+            if (sav.Generation == 3 && (sav.IndeterminateGame || ModifierKeys == Keys.Control))
             {
                 // Hacky cheats invalidated the Game Code value.
                 var drGame = WinFormsUtil.Prompt(MessageBoxButtons.YesNoCancel,
-                    "Unknown Gen3 Game Detected. Select Origins:",
+                    "Gen3 Game Detected. Select Origins:",
                     "Yes: Ruby / Sapphire" + Environment.NewLine +
                     "No: Emerald" + Environment.NewLine +
                     "Cancel: FireRed / LeafGreen");
@@ -1714,6 +1738,15 @@ namespace PKHeX.WinForms
             else
                 TB_Friendship.Text = TB_Friendship.Text == "255" ? SAV.Personal[pkm.Species].BaseFriendship.ToString() : "255";
         }
+
+        private void clickLevel(object sender, EventArgs e)
+        {
+            if (ModifierKeys == Keys.Control)
+            {
+                ((MaskedTextBox)sender).Text = "100";
+            }
+        }
+
         private void clickGender(object sender, EventArgs e)
         {
             // Get Gender Threshold
@@ -2202,6 +2235,8 @@ namespace PKHeX.WinForms
         }
         private void updateRandomPID(object sender, EventArgs e)
         {
+            if (pkm.Format < 3)
+                return;
             if (fieldsLoaded)
                 pkm.PID = Util.getHEXval(TB_PID.Text);
 
@@ -2221,6 +2256,8 @@ namespace PKHeX.WinForms
         }
         private void updateRandomEC(object sender, EventArgs e)
         {
+            if (pkm.Format < 6)
+                return;
             pkm.Version = WinFormsUtil.getIndex(CB_GameOrigin);
             if (pkm.GenNumber < 6)
             {
@@ -2292,7 +2329,10 @@ namespace PKHeX.WinForms
                 }
             }
             else if (PKX.getGender(CB_Form.Text) < 2)
-                Label_Gender.Text = CB_Form.Text;
+            {
+                if (CB_Form.Items.Count == 2) // actually M/F; Pumpkaboo formes in German are S,M,L,XL
+                    Label_Gender.Text = gendersymbols[PKX.getGender(CB_Form.Text)];
+            }
 
             if (changingFields) 
                 return;
@@ -2811,6 +2851,8 @@ namespace PKHeX.WinForms
                     pkm.Nature = CB_Nature.SelectedIndex;
                     updateRandomPID(sender, e);
                 }
+                if (sender == CB_HeldItem && SAV.Generation == 7)
+                    updateLegality();
             }
             updateNatureModification(sender, null);
             updateIVs(null, null); // updating Nature will trigger stats to update as well
@@ -2921,7 +2963,7 @@ namespace PKHeX.WinForms
 
         private void updateGender()
         {
-            int cg = Array.IndexOf(gendersymbols, Label_Gender.Text);
+            int cg = PKX.getGender(Label_Gender.Text);
             int gt = SAV.Personal.getFormeEntry(WinFormsUtil.getIndex(CB_Species), CB_Form.SelectedIndex).Gender;
 
             int Gender;
@@ -4121,7 +4163,12 @@ namespace PKHeX.WinForms
                 pb.BackgroundImage = null;
                     
                 if (DragInfo.SameBox && DragInfo.DestinationValid)
-                    SlotPictureBoxes[DragInfo.slotDestinationSlotNumber].Image = img;
+                {
+                    if (SAV.getIsTeamSet(box, DragInfo.slotDestinationSlotNumber) ^ SAV.getIsTeamSet(box, DragInfo.slotSourceSlotNumber))
+                        getQuickFiller(SlotPictureBoxes[DragInfo.slotDestinationSlotNumber], SAV.getStoredSlot(DragInfo.slotDestinationOffset));
+                    else
+                        SlotPictureBoxes[DragInfo.slotDestinationSlotNumber].Image = img;
+                }
 
                 if (result == DragDropEffects.Copy) // viewed in tabs, apply 'view' highlight
                     getSlotColor(DragInfo.slotSourceSlotNumber, Resources.slotView);
