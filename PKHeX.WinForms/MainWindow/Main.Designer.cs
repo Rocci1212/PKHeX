@@ -439,6 +439,7 @@
             this.B_CGearSkin = new System.Windows.Forms.Button();
             this.B_OpenPokeBeans = new System.Windows.Forms.Button();
             this.B_OpenZygardeCells = new System.Windows.Forms.Button();
+            this.B_OpenMiscEditor = new System.Windows.Forms.Button();
             this.dragout = new System.Windows.Forms.PictureBox();
             this.mnuL = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.mnuLLegality = new System.Windows.Forms.ToolStripMenuItem();
@@ -1595,10 +1596,15 @@
             this.NUD_Purification.Location = new System.Drawing.Point(110, 1);
             this.NUD_Purification.Margin = new System.Windows.Forms.Padding(0, 1, 0, 0);
             this.NUD_Purification.Maximum = new decimal(new int[] {
-            20000,
+            0,
             0,
             0,
             0});
+            this.NUD_Purification.Minimum = new decimal(new int[] {
+            100,
+            0,
+            0,
+            -2147483648});
             this.NUD_Purification.Name = "NUD_Purification";
             this.NUD_Purification.Size = new System.Drawing.Size(51, 20);
             this.NUD_Purification.TabIndex = 103;
@@ -5497,6 +5503,7 @@
             this.FLP_SAVtools.Controls.Add(this.B_CGearSkin);
             this.FLP_SAVtools.Controls.Add(this.B_OpenPokeBeans);
             this.FLP_SAVtools.Controls.Add(this.B_OpenZygardeCells);
+            this.FLP_SAVtools.Controls.Add(this.B_OpenMiscEditor);
             this.FLP_SAVtools.Location = new System.Drawing.Point(6, 10);
             this.FLP_SAVtools.Name = "FLP_SAVtools";
             this.FLP_SAVtools.Size = new System.Drawing.Size(297, 87);
@@ -5684,6 +5691,16 @@
             this.B_OpenZygardeCells.Text = "Zygarde Cells";
             this.B_OpenZygardeCells.UseVisualStyleBackColor = true;
             this.B_OpenZygardeCells.Click += new System.EventHandler(this.B_OpenZygardeCells_Click);
+            // 
+            // B_OpenMiscEditor
+            // 
+            this.B_OpenMiscEditor.Location = new System.Drawing.Point(3, 177);
+            this.B_OpenMiscEditor.Name = "B_OpenMiscEditor";
+            this.B_OpenMiscEditor.Size = new System.Drawing.Size(87, 23);
+            this.B_OpenMiscEditor.TabIndex = 27;
+            this.B_OpenMiscEditor.Text = "Misc Edits";
+            this.B_OpenMiscEditor.UseVisualStyleBackColor = true;
+            this.B_OpenMiscEditor.Click += new System.EventHandler(this.B_OpenMiscEditor_Click);
             // 
             // dragout
             // 
@@ -6405,6 +6422,7 @@
         private System.Windows.Forms.PictureBox PB_MarkHorohoro;
         private System.Windows.Forms.PictureBox PB_MarkVC;
         internal System.Windows.Forms.ToolStripMenuItem Menu_FlagIllegal;
+        private System.Windows.Forms.Button B_OpenMiscEditor;
     }
 }
 

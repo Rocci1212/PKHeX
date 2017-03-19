@@ -49,7 +49,7 @@ namespace PKHeX.Core
         internal string Comment = "Valid";
         public bool Valid => Judgement >= Severity.Fishy;
         public bool Flag;
-        private readonly CheckIdentifier Identifier;
+        internal readonly CheckIdentifier Identifier;
 
         internal CheckResult(CheckIdentifier i) { Identifier = i; }
         internal CheckResult(Severity s, string c, CheckIdentifier i)
@@ -209,14 +209,12 @@ namespace PKHeX.Core
                     var et = EncounterOriginal as EncounterTrade;
                     if (et?.TID == 0) // Gen1 Trade
                     {
-                        string ot = pkm.OT_Name;
-                        string tr = pkm.Format <= 2 ? "TRAINER" : "Trainer"; // decaps on transfer
-                        if (ot != "トレーナー" && ot != tr)
+                        if (!Legal.getEncounterTrade1Valid(pkm))
                             AddLine(Severity.Invalid, "Incorrect OT name for RBY in-game trade.", CheckIdentifier.Trainer);
                     }
                     else // Gen2
                     {
-                        AddLine(Severity.Valid, "Ingame Trade for GSC not implemented.", CheckIdentifier.Trainer);
+                        return; // already checked all relevant properties when fetching with getValidEncounterTradeVC2
                     }
                     return;
                 }
@@ -315,11 +313,15 @@ namespace PKHeX.Core
         }
         private void verifyIVs()
         {
+            var e = EncounterMatch as EncounterStatic;
             if ((EncounterMatch as EncounterStatic)?.IV3 == true)
             {
-                if (pkm.IVs.Count(iv => iv == 31) < 3)
+                int IVCount = 3;
+                if (e.Version == GameVersion.RBY && pkm.Species == 151)
+                    IVCount = 5; // VC Mew
+                if (pkm.IVs.Count(iv => iv == 31) < IVCount)
                 {
-                    AddLine(Severity.Invalid, "Should have at least 3 IVs = 31.", CheckIdentifier.IVs);
+                    AddLine(Severity.Invalid, $"Should have at least {IVCount} IVs = 31.", CheckIdentifier.IVs);
                     return;
                 }
             }
@@ -336,8 +338,9 @@ namespace PKHeX.Core
                 int[] IVs;
                 switch (((MysteryGift) EncounterMatch).Format)
                 {
-                    case 6: IVs = ((WC6)EncounterMatch).IVs; break;
                     case 7: IVs = ((WC7)EncounterMatch).IVs; break;
+                    case 6: IVs = ((WC6)EncounterMatch).IVs; break;
+                    case 5: IVs = ((PGF)EncounterMatch).IVs; break;
                     default: IVs = null; break;
                 }
 
@@ -564,7 +567,7 @@ namespace PKHeX.Core
         }
         private CheckResult verifyEncounterG12()
         {
-            var obj = Legal.getEncounter12(pkm, pkm.Format < 3);
+            var obj = Legal.getEncounter12(pkm, Legal.AllowGBCartEra && pkm.Format < 3);
             if (obj == null)
                 return new CheckResult(Severity.Invalid, "Unknown encounter.", CheckIdentifier.Encounter);
 
@@ -661,18 +664,8 @@ namespace PKHeX.Core
                 if (!exceptions)
                     AddLine(new CheckResult(Severity.Invalid, "Special encounter is not available to Virtual Console games.", CheckIdentifier.Encounter));
             }
-            
-            EncounterMatch = new EncounterStatic
-            {
-                Species = species,
-                Gift = true, // Forces Poké Ball
-                Ability = Legal.TransferSpeciesDefaultAbility_1.Contains(species) ? 1 : 4, // Hidden by default, else first
-                Shiny = species == 151 ? (bool?)false : null,
-                Fateful = species == 151,
-                Location = 30013,
-                EggLocation = 0,
-                Version = GameVersion.RBY
-            };
+
+            EncounterMatch = Legal.getRBYStaticTransfer(species);
             var ematch = (EncounterStatic) EncounterMatch;
 
             if (pkm.Met_Location != ematch.Location)
@@ -878,11 +871,13 @@ namespace PKHeX.Core
                 result[0] = "Missing Ribbons: " + string.Join(", ", missingRibbons);
             if (invalidRibbons.Count > 0)
                 result[1] = "Invalid Ribbons: " + string.Join(", ", invalidRibbons);
-            AddLine(Severity.Invalid, string.Join(Environment.NewLine, result.Where(s=>!string.IsNullOrEmpty(s))), CheckIdentifier.Ribbon);
+            AddLine(Severity.Invalid, string.Join(Environment.NewLine, result.Where(s => !string.IsNullOrEmpty(s))), CheckIdentifier.Ribbon);
         }
         private void verifyAbility()
         {
             int[] abilities = pkm.PersonalInfo.Abilities;
+            if (abilities[1] == 0)
+                abilities[1] = abilities[0];
             int abilval = Array.IndexOf(abilities, pkm.Ability);
             if (abilval < 0)
             {
@@ -920,9 +915,15 @@ namespace PKHeX.Core
                     {
                         var wc = EncounterMatch as WC6;
                         var type = wc?.AbilityType;
-                        if (type < 3 && pkm.AbilityNumber != 1 << type) // set number
-                            AddLine(Severity.Invalid, "Ability does not match Mystery Gift.", CheckIdentifier.Ability);
-                        else if (type == 3 && pkm.AbilityNumber == 4) // 1/2 only
+                        int abilNumber = pkm.AbilityNumber;
+                        if (type < 3 && abilNumber != 1 << type) // set number
+                        {
+                            if (type < 2 && abilNumber < 3 && abilities[0] != abilities[1]) // 0/1 required, not hidden, and ability can be changed
+                                AddLine(Severity.Valid, "Ability modified with Ability Capsule.", CheckIdentifier.Ability);
+                            else
+                                AddLine(Severity.Invalid, "Ability does not match Mystery Gift.", CheckIdentifier.Ability);
+                        }
+                        else if (type == 3 && abilNumber == 4) // 1/2 only
                             AddLine(Severity.Invalid, "Ability does not match Mystery Gift.", CheckIdentifier.Ability);
                     }
                     if (EncounterType == typeof(EncounterSlot[]) && pkm.AbilityNumber == 4)
@@ -945,9 +946,15 @@ namespace PKHeX.Core
                     {
                         var wc = EncounterMatch as WC7;
                         var type = wc?.AbilityType;
-                        if (type < 3 && pkm.AbilityNumber != 1 << type) // set number
-                            AddLine(Severity.Invalid, "Ability does not match Mystery Gift.", CheckIdentifier.Ability);
-                        else if (type == 3 && pkm.AbilityNumber == 4) // 1/2 only
+                        int abilNumber = pkm.AbilityNumber;
+                        if (type < 3 && abilNumber != 1 << type) // set number
+                        {
+                            if (type < 2 && abilNumber < 3 && abilities[0] != abilities[1]) // 0/1 required, not hidden, and ability can be changed
+                                AddLine(Severity.Valid, "Ability modified with Ability Capsule.", CheckIdentifier.Ability);
+                            else
+                                AddLine(Severity.Invalid, "Ability does not match Mystery Gift.", CheckIdentifier.Ability);
+                        }
+                        else if (type == 3 && abilNumber == 4) // 1/2 only
                             AddLine(Severity.Invalid, "Ability does not match Mystery Gift.", CheckIdentifier.Ability);
                     }
                     if (EncounterType == typeof(EncounterSlot[]) && pkm.AbilityNumber == 4)
@@ -1027,6 +1034,17 @@ namespace PKHeX.Core
 
                 return;
             }
+
+            if (pkm.Ball == 0x14 && pkm.Gen7) // Heavy Ball
+            {
+                var lineage = Legal.getLineage(pkm);
+                if (lineage.Any(e => Legal.AlolanCaptureNoHeavyBall.Contains(e)))
+                {
+                    AddLine(Severity.Invalid, "Heavy ball not possible for light, low-catch rate species in Gen VII.", CheckIdentifier.Ball);
+                    return;
+                }
+            }
+
             if (EncounterType == typeof(EncounterStatic))
             {
                 EncounterStatic enc = EncounterMatch as EncounterStatic;
@@ -1614,11 +1632,18 @@ namespace PKHeX.Core
             if (!History.Valid)
                 return;
 
-            if (pkm.GenNumber == 7 || pkm.GenNumber == 1)
+            if (pkm.Format >= 7)
             {
-                bool check = pkm.VC1 || pkm.HT_Memory != 0;
-                if (!check)
+                /* 
+                *  Bank Transfer adds in the Link Trade Memory.
+                *  Trading 7<->7 between games (not Bank) clears this data.
+                */
+                if (pkm.HT_Memory == 0)
+                {
+                    if (pkm.HT_TextVar != 0 || pkm.HT_Intensity != 0 || pkm.HT_Feeling != 0)
+                        AddLine(Severity.Invalid, "HT memory not cleared properly.", CheckIdentifier.Memory);
                     return;
+                }
 
                 if (pkm.HT_Memory != 4)
                     AddLine(Severity.Invalid, "Should have a Link Trade HT Memory.", CheckIdentifier.Memory);
@@ -1980,6 +2005,11 @@ namespace PKHeX.Core
                                      new int[0];
 
                 res = parseMoves(Moves, validLevelMoves, RelearnMoves, validTMHM, validTutor, SpecialMoves, EggMoves);
+
+                if (pkm.GenNumber >= 6)
+                    for (int i = 0; i < 4; i++)
+                        if (res[i].Flag && !RelearnMoves.Contains(Moves[i]))
+                            res[i] = new CheckResult(Severity.Invalid, "Relearn Moves missing " + res[i].Comment, res[i].Identifier);
             }
             if (Moves[0] == 0) // None
                 res[0] = new CheckResult(Severity.Invalid, "Invalid Move.", CheckIdentifier.Move);
@@ -2075,6 +2105,15 @@ namespace PKHeX.Core
                 GameVersion[] Games = {};
                 switch (pkm.GenNumber)
                 {
+                    case 3:
+                        Games = new[] {GameVersion.RS, GameVersion.E, GameVersion.FRLG};
+                        break;
+                    case 4:
+                        Games = new[] {GameVersion.DP, GameVersion.Pt, GameVersion.HGSS};
+                        break;
+                    case 5:
+                        Games = new[] {GameVersion.BW, GameVersion.B2W2};
+                        break;
                     case 6:
                         Games = new[] {GameVersion.XY, GameVersion.ORAS};
                         break;
@@ -2120,7 +2159,7 @@ namespace PKHeX.Core
                     else
                         reqBase = baseCt;
 
-                    if (pkm.RelearnMoves.Where(m=>m != 0).Count() < Math.Min(4, baseMoves.Count))
+                    if (pkm.RelearnMoves.Where(m => m != 0).Count() < Math.Min(4, baseMoves.Count))
                         reqBase = Math.Min(4, unique);
 
                     // Movepool finalized! Check validity.

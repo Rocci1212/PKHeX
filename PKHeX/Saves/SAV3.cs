@@ -106,17 +106,6 @@ namespace PKHeX.Core
                     Personal = PersonalTable.RS;
                     SeenFlagOffsets = new[] {BlockOfs[0] + 0x5C, BlockOfs[1] + 0x938, BlockOfs[4] + 0xC0C};
                     break;
-                case GameVersion.FRLG:
-                    LegalKeyItems = Legal.Pouch_Key_FRLG;
-                    OFS_PCItem = BlockOfs[1] + 0x0298;
-                    OFS_PouchHeldItem = BlockOfs[1] + 0x0310;
-                    OFS_PouchKeyItem = BlockOfs[1] + 0x03B8;
-                    OFS_PouchBalls = BlockOfs[1] + 0x0430;
-                    OFS_PouchTMHM = BlockOfs[1] + 0x0464;
-                    OFS_PouchBerry = BlockOfs[1] + 0x054C;
-                    Personal = PersonalTable.FR;
-                    SeenFlagOffsets = new[] {BlockOfs[0] + 0x5C, BlockOfs[1] + 0x988, BlockOfs[4] + 0xCA4};
-                    break;
                 case GameVersion.E:
                     LegalKeyItems = Legal.Pouch_Key_E;
                     OFS_PCItem = BlockOfs[1] + 0x0498;
@@ -126,6 +115,17 @@ namespace PKHeX.Core
                     OFS_PouchTMHM = BlockOfs[1] + 0x0690;
                     OFS_PouchBerry = BlockOfs[1] + 0x0790;
                     Personal = PersonalTable.E;
+                    SeenFlagOffsets = new[] {BlockOfs[0] + 0x5C, BlockOfs[1] + 0x988, BlockOfs[4] + 0xCA4};
+                    break;
+                case GameVersion.FRLG:
+                    LegalKeyItems = Legal.Pouch_Key_FRLG;
+                    OFS_PCItem = BlockOfs[1] + 0x0298;
+                    OFS_PouchHeldItem = BlockOfs[1] + 0x0310;
+                    OFS_PouchKeyItem = BlockOfs[1] + 0x03B8;
+                    OFS_PouchBalls = BlockOfs[1] + 0x0430;
+                    OFS_PouchTMHM = BlockOfs[1] + 0x0464;
+                    OFS_PouchBerry = BlockOfs[1] + 0x054C;
+                    Personal = PersonalTable.FR;
                     SeenFlagOffsets = new[] {BlockOfs[0] + 0x5C, BlockOfs[1] + 0x5F8, BlockOfs[4] + 0xB98};
                     break;
             }
@@ -160,6 +160,7 @@ namespace PKHeX.Core
         private int ABO => ActiveSAV*0xE000;
         private readonly int[] BlockOrder;
         private readonly int[] BlockOfs;
+        public int getBlockOffset(int block) => BlockOfs[block];
 
         // Configuration
         public override SaveFile Clone() { return new SAV3(Write(DSV:false), Version); }
@@ -330,25 +331,32 @@ namespace PKHeX.Core
                 switch (Version)
                 {
                     case GameVersion.RS:
-                    case GameVersion.E: return BitConverter.ToUInt32(Data, BlockOfs[1] + 0x0494) ^ SecurityKey;
-                    case GameVersion.FRLG: return BitConverter.ToUInt32(Data, BlockOfs[1] + 0x0294) ^ SecurityKey;
+                    case GameVersion.E: return (ushort)(BitConverter.ToUInt16(Data, BlockOfs[1] + 0x0494) ^ SecurityKey);
+                    case GameVersion.FRLG: return (ushort)(BitConverter.ToUInt16(Data, BlockOfs[1] + 0x0294) ^ SecurityKey);
                     default: return 0;
                 }
             }
             set
             {
+                if (value > 9999)
+                    value = 9999;
                 switch (Version)
                 {
                     case GameVersion.RS:
-                    case GameVersion.E: BitConverter.GetBytes(value ^ SecurityKey).CopyTo(Data, BlockOfs[1] + 0x0494); break;
-                    case GameVersion.FRLG: BitConverter.GetBytes(value ^ SecurityKey).CopyTo(Data, BlockOfs[1] + 0x0294); break;
+                    case GameVersion.E: BitConverter.GetBytes((ushort)(value ^ SecurityKey)).CopyTo(Data, BlockOfs[1] + 0x0494); break;
+                    case GameVersion.FRLG: BitConverter.GetBytes((ushort)(value ^ SecurityKey)).CopyTo(Data, BlockOfs[1] + 0x0294); break;
                 }
             }
         }
-        public int BP
+        public uint BP
         {
-            get { return Data[BlockOfs[0] + 0xEB8]; }
-            set { Data[BlockOfs[0] + 0xEB8] = (byte)value; }
+            get { return BitConverter.ToUInt16(Data, BlockOfs[0] + 0xEB8); }
+            set
+            {
+                if (value > 9999)
+                    value = 9999;
+                BitConverter.GetBytes((ushort)value).CopyTo(Data, BlockOfs[0] + 0xEB8);
+            }
         }
 
         private readonly ushort[] LegalItems, LegalKeyItems, LegalBalls, LegalTMHMs, LegalBerries;
@@ -481,7 +489,7 @@ namespace PKHeX.Core
         }
         private bool canSetDex(int species)
         {
-            if (species == 0)
+            if (species <= 0)
                 return false;
             if (species > MaxSpeciesID)
                 return false;
@@ -491,17 +499,18 @@ namespace PKHeX.Core
                 return false;
             return true;
         }
-        private bool getCaught(int species)
+
+        public override bool getCaught(int species)
         {
             int bit = species - 1;
-            int ofs = bit / 8;
+            int ofs = bit >> 3;
             byte bitval = (byte) (1 << (bit&7));
 
             int caughtOffset = BlockOfs[0] + 0x28 + ofs;
 
             return (Data[caughtOffset] & bitval) != 0;
         }
-        private void setCaught(int species, bool caught)
+        public override void setCaught(int species, bool caught)
         {
             int bit = species - 1;
             int ofs = bit / 8;
@@ -513,16 +522,17 @@ namespace PKHeX.Core
             else
                 Data[caughtOffset] &= (byte)~bitval;
         }
-        private bool getSeen(int species)
+
+        public override bool getSeen(int species)
         {
             int bit = species - 1;
-            int ofs = bit / 8;
+            int ofs = bit >> 3;
             byte bitval = (byte)(1 << (bit&7));
 
             int seenOffset = BlockOfs[0] + 0x5C + ofs;
             return (Data[seenOffset] & bitval) != 0;
         }
-        private void setSeen(int species, bool seen)
+        public override void setSeen(int species, bool seen)
         {
             int bit = species - 1;
             int ofs = bit / 8;
@@ -539,10 +549,6 @@ namespace PKHeX.Core
                     Data[SeenFlagOffsets[i] + ofs] &= (byte) ~bitval;
             }
         }
-        public override bool getCaught(PKM pkm) => getCaught(pkm.Species);
-        public override void setCaught(PKM pkm, bool caught = true) => setCaught(pkm.Species, caught);
-        public override bool getSeen(PKM pkm) => getSeen(pkm.Species);
-        public override void setSeen(PKM pkm, bool seen = true) => setSeen(pkm.Species, seen);
 
         public bool NationalDex
         {

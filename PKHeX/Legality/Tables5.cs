@@ -4,6 +4,8 @@ namespace PKHeX.Core
 {
     public static partial class Legal
     {
+        internal const int MaxSpeciesIndex_5_BW = 667;
+        internal const int MaxSpeciesIndex_5_B2W2 = 708;
         internal const int MaxSpeciesID_5 = 649;
         internal const int MaxMoveID_5 = 559;
         internal const int MaxItemID_5_BW = 632;
@@ -65,6 +67,21 @@ namespace PKHeX.Core
         internal static readonly ushort[] Pouch_Key_B2W2 = {
             437, 442, 447, 450, 453, 458, 465, 466, 471, 504, 578, 616, 617, 621, 626, 627, 628, 630, 631, 632, 633, 634, 635, 636, 637, 638,
         };
+        internal static readonly int[] TMHM_BW =
+        {
+            468, 337, 473, 347, 046, 092, 258, 339, 474, 237,
+            241, 269, 058, 059, 063, 113, 182, 240, 477, 219,
+            218, 076, 479, 085, 087, 089, 216, 091, 094, 247,
+            280, 104, 115, 482, 053, 188, 201, 126, 317, 332,
+            259, 263, 488, 156, 213, 168, 490, 496, 497, 315,
+            502, 411, 412, 206, 503, 374, 451, 507, 510, 511,
+            261, 512, 373, 153, 421, 371, 514, 416, 397, 148,
+            444, 521, 086, 360, 014, 522, 244, 523, 524, 157,
+            404, 525, 526, 398, 138, 447, 207, 365, 369, 164,
+            430, 433, 528, 249, 555,
+
+            015, 019, 057, 070, 127, 291
+        };
 
         internal static readonly int[] MovePP_BW =
         {
@@ -99,5 +116,29 @@ namespace PKHeX.Core
             // todo
         };
         internal static readonly bool[] ReleasedHeldItems_5 = Enumerable.Range(0, MaxItemID_5_B2W2+1).Select(i => HeldItems_BW.Contains((ushort)i) && !UnreleasedItems_5.Contains(i)).ToArray();
+        internal static readonly int[][] Tutors_B2W2 =
+        {
+            new[] { 343, 450, 529, 340, 324, 442, 162, 253, 402, 530, 067, 441, 007, 009, 008 }, // Driftveil City
+            new[] { 387, 334, 393, 277, 335, 304, 527, 196, 231, 401, 414, 428, 492, 276, 356, 406, 399 }, // Lentimas Town
+            new[] { 020, 173, 215, 282, 235, 355, 143, 272, 257, 202, 409, 220, 366 }, // Humilau City
+            new[] { 388, 380, 270, 495, 478, 472, 180, 278, 271, 446, 200, 283, 214, 285, 289, } // Nacrene City
+        };
+
+        internal static readonly EncounterStatic[] Encounter_BW =
+        {
+            //todo
+        };
+        internal static readonly EncounterStatic[] Encounter_B2W2 =
+        {
+            //todo
+        };
+        internal static readonly EncounterTrade[] TradeGift_BW =
+        {
+            //todo
+        };
+        internal static readonly EncounterTrade[] TradeGift_B2W2 =
+        {
+            //todo
+        };
     }
 }

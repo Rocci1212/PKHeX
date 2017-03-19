@@ -1910,7 +1910,7 @@ namespace PKHeX.Core
             return ekm;
         }
 
-        /// <summary>Unused item, placeholder for sprite finding</summary>
+        /// <summary>Unused item, placeholder for item/sprite finding</summary>
         private const ushort ITEM_UNK = 128;
 
         /// <summary>
@@ -2011,7 +2011,7 @@ namespace PKHeX.Core
         /// <returns>True if transferrable, False if not transferrable.</returns>
         public static bool isTransferrable34(ushort item)
         {
-            return item == ITEM_UNK && item > 0;
+            return item != ITEM_UNK && item > 0;
         }
 
         #region Gen 1 Character Tables
@@ -2635,6 +2635,20 @@ namespace PKHeX.Core
                 .PadRight(value.Length + 1, (char)0); // Null Terminator
             return Encoding.BigEndianUnicode.GetBytes(TempNick);
         }
+
+        /// <summary>
+        /// Gets the Main Series language ID from a GameCube (C/XD) language ID. Re-maps Spanish 6->7.
+        /// </summary>
+        /// <param name="value">GameCube (C/XD) language ID.</param>
+        /// <returns>Main Series language ID.</returns>
+        public static byte getMainLangIDfromGC(byte value) => value == 6 ? (byte)7 : value;
+
+        /// <summary>
+        /// Gets the GameCube (C/XD) language ID from a Main Series language ID. Re-maps Spanish 7->6.
+        /// </summary>
+        /// <param name="value">Main Series language ID.</param>
+        /// <returns>GameCube (C/XD) language ID.</returns>
+        public static byte getGCLangIDfromMain(byte value) => value == 7 ? (byte)6 : value;
 
         /// <summary>
         /// Gets an array of valid <see cref="PKM"/> file extensions.

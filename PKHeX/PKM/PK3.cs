@@ -43,11 +43,11 @@ namespace PKHeX.Core
         public override int SID { get { return BitConverter.ToUInt16(Data, 0x06); } set { BitConverter.GetBytes((ushort)value).CopyTo(Data, 0x06); } }
         public override string Nickname { 
             get { return PKX.getG3Str(Data.Skip(0x08).Take(10).ToArray(), Japanese); } 
-            set { byte[] strdata = PKX.setG3Str(value, Japanese);
+            set { byte[] strdata = PKX.setG3Str(IsEgg ? "タマゴ" : value, Japanese);
                 if (strdata.Length > 10) 
                     Array.Resize(ref strdata, 10);
                 strdata.CopyTo(Data, 0x08); } }
-        public override int Language { get { return BitConverter.ToUInt16(Data, 0x12) & 0xFF; } set { BitConverter.GetBytes((ushort)(value | 0x200)).CopyTo(Data, 0x12); } }
+        public override int Language { get { return BitConverter.ToUInt16(Data, 0x12) & 0xFF; } set { BitConverter.GetBytes((ushort)(IsEgg ? 0x601 : value | 0x200)).CopyTo(Data, 0x12); } }
         public override string OT_Name { 
             get { return PKX.getG3Str(Data.Skip(0x14).Take(7).ToArray(), Japanese); } 
             set { byte[] strdata = PKX.setG3Str(value, Japanese);
@@ -159,7 +159,7 @@ namespace PKHeX.Core
         // Generated Attributes
         public override int PSV => (int)((PID >> 16 ^ PID & 0xFFFF) >> 3);
         public override int TSV => (TID ^ SID) >> 3;
-        public bool Japanese => Language == 1;
+        public bool Japanese => IsEgg || Language == 1;
 
         public override byte[] Encrypt()
         {
@@ -477,10 +477,9 @@ namespace PKHeX.Core
             }
 
             // Remove HM moves
-            int[] banned = { 15, 19, 57, 70, 148, 249, 127, 291 };
             int[] newMoves = pk4.Moves;
             for (int i = 0; i < 4; i++)
-                if (banned.Contains(newMoves[i]))
+                if (Legal.HM_3.Contains(newMoves[i]))
                     newMoves[i] = 0;
             pk4.Moves = newMoves;
             pk4.FixMoves();
