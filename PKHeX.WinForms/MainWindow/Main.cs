@@ -143,9 +143,10 @@ namespace PKHeX.WinForms
                     mnuL.Items.Insert(0, mnuLLegality);
             };
 
-            // Load WC6 folder to legality
+            // Load Event Databases
+            refreshPCDDB();
+            refreshPGFDB();
             refreshWC6DB();
-            // Load WC7 folder to legality
             refreshWC7DB();
 
             #endregion
@@ -243,7 +244,8 @@ namespace PKHeX.WinForms
         public static string[] gendersymbols = { "♂", "♀", "-" };
         public static bool unicode;
 
-        public static volatile bool formInitialized, fieldsInitialized, fieldsLoaded;
+        public static volatile bool formInitialized;
+        private static bool fieldsInitialized, fieldsLoaded, loadingSAV;
         private static int colorizedbox = -1;
         private static Image colorizedcolor;
         private static int colorizedslot;
@@ -268,7 +270,7 @@ namespace PKHeX.WinForms
 
         #region Path Variables
 
-        public static string WorkingDirectory => WinFormsUtil.IsClickonceDeployed ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PKHeX") : Environment.CurrentDirectory;
+        public static string WorkingDirectory => WinFormsUtil.IsClickonceDeployed ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "PKHeX") : Application.StartupPath;
         public static string DatabasePath => Path.Combine(WorkingDirectory, "pkmdb");
         public static string MGDatabasePath => Path.Combine(WorkingDirectory, "mgdb");
         private static string BackupPath => Path.Combine(WorkingDirectory, "bak");
@@ -292,11 +294,13 @@ namespace PKHeX.WinForms
             SaveFile.SetUpdateDex = Menu_ModifyDex.Checked = Settings.SetUpdateDex;
             SaveFile.SetUpdatePKM = Menu_ModifyPKM.Checked = Settings.SetUpdatePKM;
             Menu_FlagIllegal.Checked = Settings.FlagIllegal;
+            Menu_ModifyUnset.Checked = Settings.ModifyUnset;
 
             // Select Language
             string l = Settings.Language;
             int lang = Array.IndexOf(GameInfo.lang_val, l);
-            if (lang < 0) Array.IndexOf(GameInfo.lang_val, "en");
+            if (lang < 0)
+                lang = Array.IndexOf(GameInfo.lang_val, "en");
             if (lang > -1)
                 languageID = lang;
 
@@ -463,6 +467,10 @@ namespace PKHeX.WinForms
         {
             Properties.Settings.Default.SetUpdateDex = SaveFile.SetUpdateDex = Menu_ModifyDex.Checked;
         }
+        private void mainMenuModifyUnset(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.ModifyUnset = Menu_ModifyUnset.Checked;
+        }
         private void mainMenuModifyPKM(object sender, EventArgs e)
         {
             Properties.Settings.Default.SetUpdatePKM = SaveFile.SetUpdatePKM = Menu_ModifyPKM.Checked;
@@ -526,6 +534,17 @@ namespace PKHeX.WinForms
 
             string result;
             SAV.dumpBoxes(path, out result, separate);
+            WinFormsUtil.Alert(result);
+        }
+        private void mainMenuBoxDumpSingle(object sender, EventArgs e)
+        {
+            // open folder dialog
+            FolderBrowserDialog fbd = new FolderBrowserDialog();
+            if (fbd.ShowDialog() != DialogResult.OK)
+                return;
+
+            string result;
+            SAV.dumpBox(fbd.SelectedPath, out result, CB_BoxSelect.SelectedIndex);
             WinFormsUtil.Alert(result);
         }
         private void manMenuBatchEditor(object sender, EventArgs e)
@@ -946,6 +965,7 @@ namespace PKHeX.WinForms
 
                 sav.Personal = drFRLG == DialogResult.Yes ? PersonalTable.FR : PersonalTable.LG;
             }
+            loadingSAV = true;
 
             // clean fields
             bool WindowToggleRequired = SAV.Generation < 3 && sav.Generation >= 3; // version combobox refresh hack
@@ -1266,9 +1286,53 @@ namespace PKHeX.WinForms
             }
 
             TemplateFields();
+            loadingSAV = false;
 
             // Indicate audibly the save is loaded
             SystemSounds.Beep.Play();
+        }
+
+        private static void refreshPCDDB()
+        {
+            List<MysteryGift> db = new List<MysteryGift>();
+            byte[] bin = Resources.pcd;
+            for (int i = 0; i < bin.Length; i += PCD.Size)
+            {
+                byte[] data = new byte[PCD.Size];
+                Buffer.BlockCopy(bin, i, data, 0, PCD.Size);
+                db.Add(new PCD(data));
+            }
+            if (Directory.Exists(MGDatabasePath))
+            {
+                foreach (var file in Directory.GetFiles(MGDatabasePath, "*", SearchOption.AllDirectories))
+                {
+                    var fi = new FileInfo(file);
+                    if (fi.Length == PCD.Size && fi.Extension == ".pcd")
+                        db.Add(new PCD(File.ReadAllBytes(file)));
+                    else if (fi.Length == PGT.Size && fi.Extension == ".pgt")
+                        db.Add(new PCD {Gift = new PGT(File.ReadAllBytes(file)), CardTitle = "MGDB PGT"});
+                }
+            }
+
+            Legal.MGDB_G4 = db.Distinct().ToArray();
+        }
+        private static void refreshPGFDB()
+        {
+            List<MysteryGift> db = new List<MysteryGift>();
+            byte[] bin = Resources.pgf;
+            for (int i = 0; i < bin.Length; i += PGF.Size) 
+            {
+                byte[] data = new byte[PGF.Size];
+                Buffer.BlockCopy(bin, i, data, 0, PGF.Size);
+                db.Add(new PGF(data));
+            }
+            if (Directory.Exists(MGDatabasePath))
+                db.AddRange(from file in Directory.GetFiles(MGDatabasePath, "*", SearchOption.AllDirectories)
+                               let fi = new FileInfo(file)
+                               where ".pgf" == fi.Extension && PGF.Size == fi.Length
+                               select new PGF(File.ReadAllBytes(file)));
+
+            Legal.MGDB_G5 = db.Distinct().ToArray();
         }
         private static void refreshWC6DB()
         {
@@ -1353,6 +1417,10 @@ namespace PKHeX.WinForms
             string l = curlanguage;
             GameInfo.Strings = GameInfo.getStrings(l);
 
+            // Update Legality Strings
+            // Clipboard.SetText(string.Join(Environment.NewLine, CheckStrings.getLocalization()));
+            new Thread(() => { CheckStrings.setLocalization(GameInfo.getCheckStrings(l)); }).Start();
+
             // Force an update to the met locations
             origintrack = GameVersion.Unknown;
 
@@ -1390,6 +1458,7 @@ namespace PKHeX.WinForms
             CAL_MetDate.Value = CAL_EggDate.Value = DateTime.Today;
             CB_Species.SelectedValue = SAV.MaxSpeciesID;
             CHK_Nicknamed.Checked = false;
+            lastData = null;
         }
         private void InitializeLanguage()
         {
@@ -1438,6 +1507,8 @@ namespace PKHeX.WinForms
         }
         private Action getFieldsfromPKM;
         private Func<PKM> getPKMfromFields;
+        private byte[] lastData;
+        private bool PKMIsUnsaved => fieldsInitialized && Menu_ModifyUnset.Checked && !loadingSAV && lastData != null && lastData.Any(b => b != 0) && !lastData.SequenceEqual(preparePKM().Data);
 
         private void setPKMFormatMode(int Format, GameVersion version)
         {
@@ -1570,6 +1641,7 @@ namespace PKHeX.WinForms
             dragout.Image = pk.Sprite();
             setMarkings();
             updateLegality();
+            lastData = preparePKM()?.Data;
         }
 
         // General Use Functions shared by other Forms // 
@@ -1754,7 +1826,6 @@ namespace PKHeX.WinForms
             else
                 TB_Friendship.Text = TB_Friendship.Text == "255" ? SAV.Personal[pkm.Species].BaseFriendship.ToString() : "255";
         }
-
         private void clickLevel(object sender, EventArgs e)
         {
             if (ModifierKeys == Keys.Control)
@@ -1762,7 +1833,6 @@ namespace PKHeX.WinForms
                 ((MaskedTextBox)sender).Text = "100";
             }
         }
-
         private void clickGender(object sender, EventArgs e)
         {
             // Get Gender Threshold
@@ -2933,7 +3003,7 @@ namespace PKHeX.WinForms
             }
             if (tabs)
                 updateLegality(la, skipMoveRepop);
-            WinFormsUtil.Alert(verbose ? la.VerboseReport : la.Report);
+            WinFormsUtil.Alert(la.Report(verbose));
         }
         private void updateLegality(LegalityAnalysis la = null, bool skipMoveRepop = false)
         {
@@ -2954,10 +3024,10 @@ namespace PKHeX.WinForms
 
             // Refresh Move Legality
             for (int i = 0; i < 4; i++)
-                movePB[i].Visible = !Legality.vMoves[i].Valid && !HaX;
+                movePB[i].Visible = !Legality.vMoves[i].Valid;
             
             for (int i = 0; i < 4; i++)
-                relearnPB[i].Visible = !Legality.vRelearn[i].Valid && !HaX && pkm.Format >= 6;
+                relearnPB[i].Visible = !Legality.vRelearn[i].Valid && pkm.Format >= 6;
 
             if (skipMoveRepop)
                 return;
@@ -3174,7 +3244,7 @@ namespace PKHeX.WinForms
 
         private void Main_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (SAV.Edited && DialogResult.Yes != WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Any unsaved changes will be lost.", "Are you sure you want to close PKHeX?"))
+            if ((SAV.Edited || PKMIsUnsaved) && DialogResult.Yes != WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "Any unsaved changes will be lost.", "Are you sure you want to close PKHeX?"))
             {
                 e.Cancel = true;
                 return;
@@ -3373,6 +3443,8 @@ namespace PKHeX.WinForms
 
             if (SlotPictureBoxes[slot].Image == null)
             { SystemSounds.Exclamation.Play(); return; }
+            if (PKMIsUnsaved && DialogResult.Yes != WinFormsUtil.Prompt(MessageBoxButtons.YesNo, "PKM has been modified but has not been Set.", "Continue?"))
+                return;
             int offset = getPKXOffset(slot);
             if (offset < 0)
             {
@@ -3421,7 +3493,7 @@ namespace PKHeX.WinForms
                 setParty();
                 getSlotColor(slot, Resources.slotSet);
             }
-            else if (slot < 30 || HaX && slot >= 36 && slot < 42)
+            else if (slot < 30 || HaX)
             {
                 if (slot < 30)
                 {
@@ -3440,6 +3512,7 @@ namespace PKHeX.WinForms
                 getSlotColor(slot, Resources.slotSet);
             }
 
+            lastData = pk.Data;
             updateBoxViewers();
 
             RedoStack.Clear(); Menu_Redo.Enabled = false;
@@ -3465,7 +3538,7 @@ namespace PKHeX.WinForms
                 getSlotColor(slot, Resources.slotDel);
                 return;
             }
-            if (slot < 30 || HaX && slot >= 36 && slot < 42)
+            if (slot < 30 || HaX)
             {
                 if (slot < 30)
                 {
