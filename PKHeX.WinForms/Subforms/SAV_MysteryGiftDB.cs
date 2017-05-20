@@ -62,12 +62,16 @@ namespace PKHeX.WinForms
 
             ContextMenuStrip mnu = new ContextMenuStrip();
             ToolStripMenuItem mnuView = new ToolStripMenuItem("View");
+            ToolStripMenuItem mnuSaveMG = new ToolStripMenuItem("Save Gift");
+            ToolStripMenuItem mnuSavePK = new ToolStripMenuItem("Save PKM");
 
             // Assign event handlers
             mnuView.Click += clickView;
+            mnuSaveMG.Click += clickSaveMG;
+            mnuSavePK.Click += clickSavePK;
 
             // Add to main context menu
-            mnu.Items.AddRange(new ToolStripItem[] { mnuView });
+            mnu.Items.AddRange(new ToolStripItem[] { mnuView, mnuSaveMG, mnuSavePK });
 
             // Assign to datagridview
             foreach (PictureBox p in PKXBOXES)
@@ -79,16 +83,6 @@ namespace PKHeX.WinForms
             RawDB.AddRange(Legal.MGDB_G5);
             RawDB.AddRange(Legal.MGDB_G6);
             RawDB.AddRange(Legal.MGDB_G7);
-
-            if (Directory.Exists(DatabasePath))
-            foreach (string file in Directory.GetFiles(DatabasePath, "*", SearchOption.AllDirectories))
-            {
-                FileInfo fi = new FileInfo(file);
-                if (!MysteryGift.getIsMysteryGift(fi.Length)) continue;
-                var mg = MysteryGift.getMysteryGift(File.ReadAllBytes(file), fi.Extension);
-                if (mg != null)
-                    RawDB.Add(mg);
-            }
 
             RawDB = new List<MysteryGift>(RawDB.Where(mg => !mg.IsItem && mg.IsPokémon && mg.Species > 0).Distinct().OrderBy(mg => mg.Species));
             foreach (var mg in RawDB)
@@ -120,20 +114,43 @@ namespace PKHeX.WinForms
         // Important Events
         private void clickView(object sender, EventArgs e)
         {
+            int index = getSenderIndex(sender);
+            m_parent.populateFields(Results[index].convertToPKM(Main.SAV), false);
+            slotSelected = index;
+            slotColor = Properties.Resources.slotView;
+            FillPKXBoxes(SCR_Box.Value);
+            L_Viewed.Text = string.Format(Viewed, Results[index].FileName);
+        }
+        private void clickSavePK(object sender, EventArgs e)
+        {
+            int index = getSenderIndex(sender);
+            var gift = Results[index];
+            var pk = gift.convertToPKM(Main.SAV);
+            WinFormsUtil.SavePKMDialog(pk);
+        }
+        private void clickSaveMG(object sender, EventArgs e)
+        {
+            int index = getSenderIndex(sender);
+            var gift = Results[index];
+            WinFormsUtil.SaveMGDialog(gift);
+        }
+
+        private int getSenderIndex(object sender)
+        {
             sender = ((sender as ToolStripItem)?.Owner as ContextMenuStrip)?.SourceControl ?? sender as PictureBox;
             int index = Array.IndexOf(PKXBOXES, sender);
-
-            var dataArr = Results.Skip(SCR_Box.Value * RES_MIN).Take(RES_MAX).ToArray();
-            if (index >= dataArr.Length)
-                System.Media.SystemSounds.Exclamation.Play();
-            else
+            if (index >= RES_MAX)
             {
-                m_parent.populateFields(dataArr[index].convertToPKM(Main.SAV), false);
-                slotSelected = index + SCR_Box.Value * RES_MIN;
-                slotColor = Core.Properties.Resources.slotView;
-                FillPKXBoxes(SCR_Box.Value);
-                L_Viewed.Text = string.Format(Viewed, dataArr[index].FileName);
+                System.Media.SystemSounds.Exclamation.Play();
+                return -1;
             }
+            index += SCR_Box.Value*RES_MIN;
+            if (index >= Results.Count)
+            {
+                System.Media.SystemSounds.Exclamation.Play();
+                return -1;
+            }
+            return index;
         }
         private void populateComboBoxes()
         {
@@ -311,16 +328,17 @@ namespace PKHeX.WinForms
                     PKXBOXES[i].Image = null;
                 return;
             }
-            var data = Results.Skip(start * RES_MIN).Take(RES_MAX).ToArray();
-            for (int i = 0; i < data.Length; i++)
-                PKXBOXES[i].Image = data[i].Sprite();
-            for (int i = data.Length; i < RES_MAX; i++)
+            int begin = start * RES_MIN;
+            int end = Math.Min(RES_MAX, Results.Count - start * RES_MIN);
+            for (int i = 0; i < end; i++)
+                PKXBOXES[i].Image = Results[i + begin].Sprite();
+            for (int i = end; i < RES_MAX; i++)
                 PKXBOXES[i].Image = null;
 
             for (int i = 0; i < RES_MAX; i++)
-                PKXBOXES[i].BackgroundImage = Core.Properties.Resources.slotTrans;
+                PKXBOXES[i].BackgroundImage = Properties.Resources.slotTrans;
             if (slotSelected != -1 && slotSelected >= RES_MIN * start && slotSelected < RES_MIN * start + RES_MAX)
-                PKXBOXES[slotSelected - start * RES_MIN].BackgroundImage = slotColor ?? Core.Properties.Resources.slotView;
+                PKXBOXES[slotSelected - start * RES_MIN].BackgroundImage = slotColor ?? Properties.Resources.slotView;
         }
 
         private void Menu_SearchAdvanced_Click(object sender, EventArgs e)

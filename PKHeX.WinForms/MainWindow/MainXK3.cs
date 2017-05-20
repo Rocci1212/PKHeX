@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Drawing;
 using PKHeX.Core;
 
 namespace PKHeX.WinForms
@@ -26,10 +25,11 @@ namespace PKHeX.WinForms
             CHK_IsEgg.Checked = xk3.IsEgg;
             CHK_Nicknamed.Checked = xk3.IsNicknamed;
             Label_OTGender.Text = gendersymbols[xk3.OT_Gender];
-            Label_OTGender.ForeColor = xk3.OT_Gender == 1 ? Color.Red : Color.Blue;
+            Label_OTGender.ForeColor = getGenderColor(xk3.OT_Gender);
             TB_PID.Text = xk3.PID.ToString("X8");
             CB_HeldItem.SelectedValue = xk3.HeldItem;
-            CB_Ability.SelectedIndex = xk3.AbilityNumber > CB_Ability.Items.Count ? 0 : xk3.AbilityNumber;
+            int abil = xk3.AbilityNumber >> 1;
+            CB_Ability.SelectedIndex = abil > CB_Ability.Items.Count ? 0 : abil;
             CB_Nature.SelectedValue = xk3.Nature;
             TB_TID.Text = xk3.TID.ToString("00000");
             TB_SID.Text = xk3.SID.ToString("00000");
@@ -101,13 +101,11 @@ namespace PKHeX.WinForms
             if (xk3.ShadowID > 0)
             {
                 int puri = xk3.Purification;
-                if (puri > NUD_Purification.Maximum)
-                    puri = 0;
-                else if (puri < NUD_Purification.Minimum)
+                if (puri < NUD_Purification.Minimum)
                     puri = (int)NUD_Purification.Minimum;
 
                 NUD_Purification.Value = puri;
-                CHK_Shadow.Checked = puri < 0;
+                CHK_Shadow.Checked = puri > 0;
 
                 NUD_ShadowID.Value = Math.Max(xk3.ShadowID, 0);
             }
@@ -122,7 +120,7 @@ namespace PKHeX.WinForms
 
             TB_EXP.Text = xk3.EXP.ToString();
             Label_Gender.Text = gendersymbols[xk3.Gender];
-            Label_Gender.ForeColor = xk3.Gender == 2 ? Label_Species.ForeColor : (xk3.Gender == 1 ? Color.Red : Color.Blue);
+            Label_Gender.ForeColor = getGenderColor(xk3.Gender);
         }
         private PKM prepareXK3()
         {
@@ -136,7 +134,7 @@ namespace PKHeX.WinForms
             xk3.SID = Util.ToInt32(TB_SID.Text);
             xk3.EXP = Util.ToUInt32(TB_EXP.Text);
             xk3.PID = Util.getHEXval(TB_PID.Text);
-            xk3.AbilityNumber = CB_Ability.SelectedIndex; // 0/1 (stored in IVbits)
+            xk3.AbilityNumber = 1 << CB_Ability.SelectedIndex; // to match gen6+
 
             xk3.FatefulEncounter = CHK_Fateful.Checked;
             xk3.Gender = PKX.getGender(Label_Gender.Text);

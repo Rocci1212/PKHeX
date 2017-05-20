@@ -68,9 +68,13 @@ namespace PKHeX.WinForms
             if (SAV.BoxesUnlocked > 0)
             {
                 CB_Unlocked.Items.Clear();
-                for (int i = 0; i <= SAV.BoxCount; i++)
+                int max = SAV.BoxCount;
+                if (SAV.Generation == 6)
+                    max -= 1; // cover legendary captured unlocks final box, not governed by BoxesUnlocked
+
+                for (int i = 0; i <= max; i++)
                     CB_Unlocked.Items.Add(i);
-                CB_Unlocked.SelectedIndex = Math.Min(SAV.BoxCount, SAV.BoxesUnlocked);
+                CB_Unlocked.SelectedIndex = Math.Min(max, SAV.BoxesUnlocked);
             }
             else
             {
@@ -166,7 +170,7 @@ namespace PKHeX.WinForms
             else if (!SAV.SwapBox(index, index + dir)) // valid but locked
             {
                 MoveItem(-dir); // undo
-                WinFormsUtil.Alert("Locked slots prevent movement of box(es).");
+                WinFormsUtil.Alert("Locked/Team slots prevent movement of box(es).");
             }
             else
                 changeBox(null, null);

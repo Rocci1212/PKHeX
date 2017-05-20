@@ -45,6 +45,9 @@ namespace PKHeX.WinForms
         private bool MapUpdated;
         private bool editing;
 
+        private static readonly string[] TrainerStampTitle = { "01:Official Pokemon Trainer", "02:Melemele Trial Completion", "03:Akala Trial Completion", "04:Ula'ula Trial Completion", "05:Poni Trial Completion", "06:Island Challenge Completion", "07:Melemele Pokedex Completion", "08:Akala Pokedex Completion", "09:Ula'ula Pokedex Completion", "10:Poni Pokedex Completion", "11:Alola Pokedex Completion", "12:50 Consecutive Single Battle Wins", "13:50 Consecutive Double Battle Wins", "14:50 Consecutive Multi Battle Wins", "15:Poke Finder Pro" };
+        private static readonly string[] BattleStyles = { "Normal", "Elegant", "Girlish", "Reverent", "Smug", "Left-handed", "Passionate", "Idol" };
+
         private void getComboBoxes()
         {
             var dsregion_list = new[] {
@@ -102,6 +105,16 @@ namespace PKHeX.WinForms
             CB_Vivillon.DisplayMember = "Text";
             CB_Vivillon.ValueMember = "Value";
             CB_Vivillon.DataSource = PKX.getFormList(666, GameInfo.Strings.types, GameInfo.Strings.forms, Main.gendersymbols).ToList();
+
+            foreach (string t in BattleStyles)
+            {
+                CB_BallThrowType.Items.Add(t);
+                LB_BallThrowTypeUnlocked.Items.Add(t);
+                LB_BallThrowTypeLearned.Items.Add(t);
+            }
+
+            foreach (string t in TrainerStampTitle)
+                LB_Stamps.Items.Add(t);
         }
         private void getTextBoxes()
         {
@@ -191,6 +204,33 @@ namespace PKHeX.WinForms
 
             CB_Vivillon.SelectedIndex = (SAV.Vivillon < CB_Vivillon.Items.Count) ? SAV.Vivillon : -1;
             NUD_DaysFromRefreshed.Value = Math.Min(NUD_DaysFromRefreshed.Maximum, SAV.DaysFromRefreshed);
+
+            if (SAV.BallThrowType >= 0 && SAV.BallThrowType < CB_BallThrowType.Items.Count)
+                CB_BallThrowType.SelectedIndex = SAV.BallThrowType;
+
+            byte bttu = SAV.BallThrowTypeUnlocked;
+            LB_BallThrowTypeUnlocked.SetSelected(0, true);
+            LB_BallThrowTypeUnlocked.SetSelected(1, true);
+            for (int i = 2; i < LB_BallThrowTypeUnlocked.Items.Count; i++)
+                LB_BallThrowTypeUnlocked.SetSelected(i, (bttu & (1 << i)) != 0);
+
+            byte bttl = SAV.BallThrowTypeLearned;
+            LB_BallThrowTypeLearned.SetSelected(0, true);
+            for (int i = 1; i < LB_BallThrowTypeLearned.Items.Count; i++)
+                LB_BallThrowTypeLearned.SetSelected(i, (bttl & (1 << i)) != 0);
+
+            CB_BallThrowTypeListMode.SelectedIndex = 0;
+
+            uint stampBits = SAV.Stamps;
+            for (int i = 0; i < LB_Stamps.Items.Count; i++)
+                LB_Stamps.SetSelected(i, (stampBits & (1 << i)) != 0);
+
+            byte btsu = SAV.BattleTreeSuperUnlocked;
+            CHK_UnlockSuperSingles.Checked = (btsu & 1) != 0;
+            CHK_UnlockSuperDoubles.Checked = (btsu & (1 << 1)) != 0;
+            CHK_UnlockSuperMulti.Checked = (btsu & (1 << 2)) != 0;
+
+            CHK_UnlockMega.Checked = SAV.MegaUnlocked;
         }
         private void save()
         {
@@ -278,6 +318,26 @@ namespace PKHeX.WinForms
             if (CB_Vivillon.SelectedIndex >= 0) SAV.Vivillon = CB_Vivillon.SelectedIndex;
             
             SAV.DaysFromRefreshed = (byte)NUD_DaysFromRefreshed.Value;
+            SAV.BallThrowType = CB_BallThrowType.SelectedIndex;
+            SAV.BallThrowTypeUnlocked = (byte)getBits(LB_BallThrowTypeUnlocked);
+            SAV.BallThrowTypeLearned = (byte)getBits(LB_BallThrowTypeLearned);
+            SAV.Stamps = getBits(LB_Stamps);
+
+            byte btsu = 0;
+            if (CHK_UnlockSuperSingles.Checked) btsu |= 1;
+            if (CHK_UnlockSuperDoubles.Checked) btsu |= 1 << 1;
+            if (CHK_UnlockSuperMulti.Checked) btsu |= 1 << 2;
+            SAV.BattleTreeSuperUnlocked = btsu;
+
+            SAV.MegaUnlocked = CHK_UnlockMega.Checked;
+        }
+        private static uint getBits(ListBox listbox)
+        {
+            uint bits = 0;
+            for (int i = 0; i < listbox.Items.Count; i++)
+                if (listbox.GetSelected(i))
+                    bits |= (uint)(1 << i);
+            return bits;
         }
 
         private void clickOT(object sender, MouseEventArgs e)
@@ -287,10 +347,9 @@ namespace PKHeX.WinForms
             if (ModifierKeys != Keys.Control)
                 return;
 
-            var z = Application.OpenForms.Cast<Form>().FirstOrDefault(form => form.Name == typeof(f2_Text).Name) as f2_Text;
-            if (z != null)
-            { z.Location = Location; z.BringToFront(); return; }
-            new f2_Text(tb).Show();
+            var d = new f2_Text(tb, null);
+            d.ShowDialog();
+            tb.Text = d.FinalString;
         }
         private void showTSV(object sender, EventArgs e)
         {
@@ -374,11 +433,11 @@ namespace PKHeX.WinForms
                     }
                     break;
                 case 1: // Full Legal
-                    byte[] data1 = SAV.Gender == 0 ? Core.Properties.Resources.fashion_m_sm : Core.Properties.Resources.fashion_f_sm;
+                    byte[] data1 = SAV.Gender == 0 ? Properties.Resources.fashion_m_sm : Properties.Resources.fashion_f_sm;
                     data1.CopyTo(SAV.Data, SAV.Fashion);
                     break;
                 case 2: // Everything
-                    byte[] data2 = SAV.Gender == 0 ? Core.Properties.Resources.fashion_m_sm_illegal : Core.Properties.Resources.fashion_f_sm_illegal;
+                    byte[] data2 = SAV.Gender == 0 ? Properties.Resources.fashion_m_sm_illegal : Properties.Resources.fashion_f_sm_illegal;
                     data2.CopyTo(SAV.Data, SAV.Fashion);
                     break;
                 default:
@@ -435,6 +494,35 @@ namespace PKHeX.WinForms
             if (refval >= 0)
                 tip += Environment.NewLine + "Date: " + new DateTime(2000, 1, 1).AddSeconds(refval + value);
             return tip;
+        }
+
+        private void CB_BattleStyleListMode_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (CB_BallThrowTypeListMode.SelectedIndex == 0)
+            {
+                LB_BallThrowTypeUnlocked.Visible = true;
+                LB_BallThrowTypeLearned.Visible = false;
+            }
+            else
+            {
+                LB_BallThrowTypeUnlocked.Visible = false;
+                LB_BallThrowTypeLearned.Visible = true;
+            }
+        }
+        private void LB_BallThrowTypeLearned_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (Loading) return;
+            if (!LB_BallThrowTypeLearned.GetSelected(0))
+                LB_BallThrowTypeLearned.SetSelected(0, true);
+        }
+        private void LB_BallThrowTypeUnlocked_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (Loading) return;
+            for (int i = 0; i < 2; i++)
+            {
+                if (!LB_BallThrowTypeUnlocked.GetSelected(i))
+                    LB_BallThrowTypeUnlocked.SetSelected(i, true);
+            }
         }
 
         private void B_GenTID_Click(object sender, EventArgs e)
@@ -537,6 +625,7 @@ namespace PKHeX.WinForms
             {134, "Evolutions Cancelled"},
             {135, "SOS Battle Allies Called"},
             {137, "Battle Royal Dome Battles"},
+            {138, "Items Picked Up after Battle"},
             {139, "Ate in Malasadas Shop"},
             {141, "Dishes eaten in Battle Buffet"},
             {142, "Pokémon Refresh Accessed"},
