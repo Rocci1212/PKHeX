@@ -313,6 +313,35 @@ public sealed class SAV2 : SaveFile, ILangDeviantSave, IEventFlagArray, IEventWo
     // Trainer Info
     public override GameVersion Version { get; set; }
 
+    /* this password is used to reset the clock in Pokemon Gold/Silver/Crystal
+     * https://legendarypkmn.net/pass/
+    public string Password
+    {
+        get
+        {
+            byte[] strdata = Data.Skip(0x200B).Take(StringLength).ToArray();
+
+            int byteSum = 0;
+            int moneyDivVal;
+            int trainerDivVal;
+
+            for (int i = 0; i < strdata.Length; i++)
+            {
+                if (strdata[i] == 80)
+                    break;
+
+                byteSum += strdata[i];
+            }
+
+            // there's definitely a more efficient way of doing this!
+            moneyDivVal = (((Convert.ToInt32(Money) % 65535)) / 256) + (Convert.ToInt32(Money) % 256);
+            trainerDivVal = (((Convert.ToInt32(TID) % 65535)) / 256) + (Convert.ToInt32(TID) % 256);
+
+            return Convert.ToString(byteSum + moneyDivVal + trainerDivVal);
+        }
+    }
+    */
+
     public override string OT
     {
         get => GetString(Data.Slice(Offsets.Trainer1 + 2, (Korean ? 2 : 1) * MaxStringLengthTrainer));
